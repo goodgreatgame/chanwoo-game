@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#d9e8ff"><title>이찬우 키우기 2.0</title>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#171039"><title>이찬우 키우기 4.2</title>
 <style>
 :root{--ink:#202944;--muted:#687794;--line:#d9e1f2;--gold:#ffd35a;--purple:#8e72e8;--panel:#fffffff2;--accent:#6c8cff}
 *{box-sizing:border-box}body{margin:0;padding:16px;background:radial-gradient(circle at 8% 4%,#c9e6ff 0,transparent 30%),radial-gradient(circle at 92% 12%,#f4d9ff 0,transparent 28%),linear-gradient(145deg,#e8f1ff,#f4efff 55%,#fff4df);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink)}button{font:inherit;cursor:pointer;border:0;color:inherit}.app{max-width:1160px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}.brand{font-weight:1000;font-size:clamp(25px,5vw,39px);letter-spacing:-1.5px;text-shadow:0 2px white}.resources{display:flex;gap:7px;flex-wrap:wrap}.pill{background:#ffffffd9;border:1px solid var(--line);border-radius:99px;padding:9px 13px;font-weight:900;box-shadow:0 4px 12px #465c8012}.layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(270px,.8fr);gap:13px}.card{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:16px;box-shadow:0 12px 32px #52688b18;backdrop-filter:blur(10px)}.hero{min-height:390px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;background:linear-gradient(145deg,#8dcaff,#d8d5ff 58%,#ffe8bb)}.hero:before,.hero:after{content:"✦";position:absolute;color:white;font-size:35px;animation:twinkle 2s infinite alternate}.hero:before{left:12%;top:20%}.hero:after{right:12%;top:31%}@keyframes twinkle{to{opacity:.25;transform:scale(.7)}}.lv{font-weight:1000;background:#ffffffcf;border-radius:99px;padding:6px 15px;z-index:1}.heroimg{height:245px;width:min(75%,390px);object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 9px 5px #485b7a40);animation:bob 2.5s ease-in-out infinite;z-index:1}@keyframes bob{50%{transform:translateY(-7px)}}.bubble{z-index:1;background:white;padding:8px 17px;border-radius:16px;font-weight:850;box-shadow:0 4px 14px #52688b20}.xpbar{width:min(78%,360px);height:13px;background:#ffffffb9;border-radius:99px;overflow:hidden;margin-top:9px;z-index:1}.xpfill{height:100%;width:0;background:linear-gradient(90deg,#ffca45,#ff975b);transition:width .2s}.tiny{font-size:12px;color:var(--muted);margin-top:5px}.sectiontitle{font-size:18px;font-weight:950;margin:0 0 11px}.stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e9edf5;font-weight:800}.stat:last-of-type{border:0}.primary{background:linear-gradient(#ffe17b,#ffbd36);border:1px solid #efb53d;border-radius:14px;padding:12px 14px;width:100%;font-weight:950;color:#593d00;box-shadow:0 4px 0 #d99e2c;margin-top:10px}.primary:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#f0f3ff;border:1px solid var(--line);border-radius:12px;padding:10px;font-weight:850}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.grow{flex:1}.nav{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:13px}.nav button{background:#ffffffdf;border:1px solid var(--line);border-radius:14px;padding:10px 5px;font-weight:900;font-size:13px}.nav button.active{background:linear-gradient(135deg,#e9e5ff,#dcecff);border:2px solid #8e83e8;box-shadow:0 4px 12px #8e83e822}.content{margin-top:13px;min-height:190px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:9px}.tile{border:1px solid var(--line);border-radius:18px;background:linear-gradient(155deg,#fff,#f5f7ff);padding:12px;text-align:center;box-shadow:0 5px 14px #52688b0b}.tile.selected{border:2px solid #9b7cf2;background:#f1ebff}.tile img{width:100%;height:105px;object-fit:contain;mix-blend-mode:multiply}.tile b{display:block;font-size:14px}.tile small{color:var(--muted)}.tile button{margin-top:7px;width:100%}.action{background:linear-gradient(135deg,#f0f2ff,#e7edff);border:1px solid #d7def2;border-radius:12px;padding:9px;font-weight:850}.action:disabled{opacity:.42;cursor:not-allowed}.pet-emoji{font-size:46px;padding:12px}.heroimg{cursor:pointer}.listitem{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e9edf5;padding:11px 0}.listitem:last-child{border:0}.notice{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#26324c;color:white;padding:11px 17px;border-radius:99px;opacity:0;pointer-events:none;transition:.2s;z-index:9}.toast.show{opacity:1}.modal{position:fixed;inset:0;background:#17233c77;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal.open{display:flex}.modalbox{background:white;border-radius:20px;padding:20px;max-width:420px;width:100%;box-shadow:0 20px 60px #17233c55}.evol{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.evol img{width:100%;height:95px;object-fit:contain;background:#f3f4fc;border-radius:12px}.evol small{display:block;text-align:center;font-weight:850;margin-top:5px}.hidden{display:none!important}
@@ -129,8 +129,61 @@ button:active{transform:translateY(2px) scale(.98)!important}
 .heroimg{animation:chanwooGlow 3s ease-in-out infinite}
 @media(max-width:650px){.heroimg{height:280px!important;width:min(100%,300px)!important}.tile img{height:185px!important}}
 </style>
+<style id="chanwoo-42-fantasy-polish">
+:root{--gold:#ffe08a;--purple:#a98aff;--line:#7763b5;--panel:#21194a}
+html{background:#0c0820;scroll-behavior:smooth}
+body{
+ background:
+  radial-gradient(ellipse at 12% 4%,rgba(112,72,204,.34),transparent 32%),
+  radial-gradient(ellipse at 90% 18%,rgba(47,123,181,.22),transparent 30%),
+  radial-gradient(ellipse at 50% 100%,rgba(117,65,177,.18),transparent 44%),
+  linear-gradient(145deg,#0b0820 0%,#171039 48%,#0b142b 100%)!important;
+}
+.app{max-width:1280px}
+.top{
+ position:relative;isolation:isolate;overflow:hidden;
+ border:1px solid rgba(255,221,137,.48)!important;
+ background:linear-gradient(105deg,rgba(48,31,99,.97),rgba(23,34,75,.97) 58%,rgba(41,27,83,.97))!important;
+ box-shadow:0 16px 44px rgba(4,2,19,.56),inset 0 1px rgba(255,255,255,.14)!important;
+}
+.top:after{content:"✦  ✧  ✦";position:absolute;right:20px;top:7px;color:#ffe6a1;opacity:.28;font-size:28px;letter-spacing:12px;pointer-events:none;z-index:-1}
+.brand{letter-spacing:-1.7px;text-shadow:0 2px 0 #54358d,0 0 22px rgba(190,153,255,.62)!important}
+.pill{background:linear-gradient(145deg,#30265f,#211b49)!important;border-color:#7866b4!important;box-shadow:inset 0 1px rgba(255,255,255,.14),0 6px 16px #05031666!important}
+.layout{gap:17px}
+.card{border-color:rgba(190,160,255,.36)!important;box-shadow:0 18px 42px rgba(3,2,17,.42),inset 0 1px rgba(255,255,255,.09)!important}
+.hero{
+ border:1px solid rgba(255,218,139,.35)!important;
+ background:radial-gradient(ellipse at 50% 82%,rgba(157,101,255,.42),transparent 53%),
+ linear-gradient(145deg,#253a70 0%,#382666 52%,#183e5d 100%)!important;
+ box-shadow:inset 0 0 55px rgba(12,7,39,.34),0 10px 30px #05031666;
+}
+.hero:before,.hero:after{color:#fff0b8;text-shadow:0 0 10px #fff,0 0 24px #e7bfff}
+.heroimg{filter:drop-shadow(0 13px 18px #050316bb) drop-shadow(0 0 17px #b78aff88)!important}
+.bubble{border:1px solid #ffe3a0;background:linear-gradient(135deg,#fff1c8,#f4d9ff)!important;color:#38265e!important}
+.lv{background:linear-gradient(135deg,#49347e,#24204e)!important;border-color:#f3d58a!important;color:#ffe6a4!important}
+.sectiontitle{letter-spacing:-.35px;text-shadow:0 0 18px #b18aff55}
+.primary,.action,.secondary,.nav button{box-shadow:0 5px 13px #05031655,inset 0 1px #ffffff17!important}
+.primary{background:linear-gradient(135deg,#9b6af0,#6239b3 65%,#49308b)!important;border-color:#d4b6ff!important;color:#fff!important;box-shadow:0 4px 0 #352064,0 9px 20px #05031688!important}
+.primary:disabled{filter:saturate(.5)}
+.nav{padding:8px;background:rgba(12,9,35,.74)!important;border-color:#66539e!important;box-shadow:0 12px 30px #05031666}
+.nav button{background:linear-gradient(145deg,#373064,#211d49)!important;border-color:#65589b!important}
+.nav button.active{background:linear-gradient(135deg,#7957c6,#286e91)!important;border-color:#e5c9ff!important;box-shadow:0 0 0 2px #a98aff55,0 8px 22px #05031699!important}
+.tile{background:linear-gradient(155deg,#342b68,#1c1a43)!important;border-color:#68579c!important;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.tile:hover{transform:translateY(-3px);border-color:#d2b5ff!important;box-shadow:0 12px 24px #07031f88,0 0 18px #9e7aff22!important}
+.tile.selected{border-color:#f2d18b!important;box-shadow:0 0 0 2px #f2d18b33,0 10px 24px #07031f88!important}
+.tile img{filter:drop-shadow(0 9px 13px #07031f99)!important}
+.xpbar{box-shadow:0 0 16px #9871ff33}
+.xpfill{background:linear-gradient(90deg,#8b5cf6,#c18cff,#ffe08a)!important}
+.listitem{border-color:#514678!important}
+.notice,.tiny{color:#c9c1e9!important}
+.toast{border:1px solid #ffe3a0!important}
+.modalbox{border-color:#b99af4!important;box-shadow:0 24px 80px #03010dcc!important}
+button:focus-visible,input:focus-visible{outline:2px solid #ffe08a!important;outline-offset:3px}
+@media(max-width:760px){.top:after{display:none}.resources{width:100%}.resources .pill{padding:8px 10px}.hero{border-radius:20px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+</style>
 </head><body><div class="app">
-<header class="top"><div class="brand">👑 이찬우 키우기 <span style="font-size:.62em;color:#ffe17b">3.0</span></div><div class="resources"><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">💎 <span id="gems">0</span></div><button class="secondary" id="accountBtn">👤 계정 로그인</button><button class="secondary" id="musicToggle" aria-pressed="false">🎵 8비트 BGM 재생</button><label class="pill" style="display:flex;align-items:center;gap:7px;font-size:12px">🔊 <input id="musicVolume" type="range" min="0" max="100" value="25" style="width:76px;accent-color:#8e72e8" aria-label="노래 음량"></label><label class="pill" style="display:flex;align-items:center;gap:7px;font-size:12px">✨ <input id="effectVolume" type="range" min="0" max="100" value="35" style="width:65px" aria-label="효과음 음량"></label><button class="secondary" id="settings">⚙️</button></div></header>
+<header class="top"><div class="brand">👑 이찬우 키우기 <span style="font-size:.62em;color:#ffe17b">4.2</span></div><div class="resources"><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">💎 <span id="gems">0</span></div><button class="secondary" id="accountBtn">👤 계정 로그인</button><button class="secondary" id="musicToggle" aria-pressed="false">🎵 8비트 BGM 재생</button><label class="pill" style="display:flex;align-items:center;gap:7px;font-size:12px">🔊 <input id="musicVolume" type="range" min="0" max="100" value="25" style="width:76px;accent-color:#8e72e8" aria-label="노래 음량"></label><label class="pill" style="display:flex;align-items:center;gap:7px;font-size:12px">✨ <input id="effectVolume" type="range" min="0" max="100" value="35" style="width:65px" aria-label="효과음 음량"></label><button class="secondary" id="settings">⚙️</button></div></header>
 <main class="layout">
 <section class="card hero"><div class="lv">Lv. <span id="level">1</span> · <span id="stage">꼬꼬마 찬우</span></div><img class="heroimg" id="heroimg" alt="이찬우 캐릭터"><div class="bubble" id="bubble">오늘도 화이팅! :)</div><div class="xpbar"><div class="xpfill" id="xpfill"></div></div><div class="tiny"><span id="xp">0</span> / <span id="need">100</span> 경험치 · 초당 <b id="rate">10</b> 코인</div></section>
 <aside class="card"><h2 class="sectiontitle">⭐ 능력치</h2><div class="stat"><span>⚔️ 공격력</span><b id="attack">10</b></div><div class="stat"><span>❤️ 체력</span><b id="hp">100</b></div><div class="stat"><span>🪙 코인 획득량</span><b id="coinbonus">100%</b></div><button class="primary" id="upgrade">⬆️ 능력 강화 · 1,000 🪙</button><button class="secondary" id="train" style="width:100%;margin-top:9px">💪 훈련하기 · 경험치 +25</button><div class="notice" id="offline"></div><hr style="border:0;border-top:1px solid var(--line);margin:13px 0"><div class="row"><b class="grow">🎁 출석 보상</b><button class="secondary" id="daily">오늘 보상 받기</button></div><div class="tiny" id="dailyNote">매일 한 번 1,000 코인과 보석 5개를 받을 수 있어요.</div><div class="row" style="margin-top:10px"><b class="grow">✨ 캐릭터 진화</b><button class="secondary" id="evolution">진화 보기</button></div><div class="evol" id="evol"></div></aside>
@@ -362,7 +415,7 @@ setInterval(()=>{
  if(!toggle||!volume)return;
  let ctx=null, musicBus=null, fxBus=null, timer=null, step=0, playing=false, trackIndex=0;
  const tracks=[
-  {name:'이찬우 키우기 송 (통통 찬우 대작전)',tempo:156,lead:[784,0,988,784,659,784,523,659,784,988,784,659,880,0,1175,988,784,659,523,659,784,0,988,1175,1047,988,784,659,587,659,784,523],bass:[131,0,131,196,147,0,147,220,131,0,165,196,147,0,131,220]},
+  {name:'통통 찬우 대작전 - 8비트',tempo:156,lead:[784,0,988,784,659,784,523,659,784,988,784,659,880,0,1175,988,784,659,523,659,784,0,988,1175,1047,988,784,659,587,659,784,523],bass:[131,0,131,196,147,0,147,220,131,0,165,196,147,0,131,220]},
   {name:'급식실에서 왕관을 줍다',tempo:143,lead:[523,659,784,0,1047,988,784,659,587,698,880,0,1175,1047,880,698,659,784,988,0,1319,1175,988,784,698,880,1047,0,988,784,659,523],bass:[131,131,196,0,165,165,220,0,147,147,220,0,175,175,131,0]},
   {name:'시험 1번 찍고 전설 됨',tempo:168,lead:[988,988,784,523,0,659,784,988,1175,0,988,784,659,523,587,0,784,1047,1319,1175,988,0,784,659,523,659,784,0,1047,988,784,523],bass:[98,0,131,131,147,0,110,110,165,0,131,131,98,0,147,165]}
  ];
