@@ -5,7 +5,7 @@
 *{box-sizing:border-box}body{margin:0;padding:16px;background:radial-gradient(circle at 8% 4%,#c9e6ff 0,transparent 30%),radial-gradient(circle at 92% 12%,#f4d9ff 0,transparent 28%),linear-gradient(145deg,#e8f1ff,#f4efff 55%,#fff4df);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--ink)}button{font:inherit;cursor:pointer;border:0;color:inherit}.app{max-width:1160px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}.brand{font-weight:1000;font-size:clamp(25px,5vw,39px);letter-spacing:-1.5px;text-shadow:0 2px white}.resources{display:flex;gap:7px;flex-wrap:wrap}.pill{background:#ffffffd9;border:1px solid var(--line);border-radius:99px;padding:9px 13px;font-weight:900;box-shadow:0 4px 12px #465c8012}.layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(270px,.8fr);gap:13px}.card{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:16px;box-shadow:0 12px 32px #52688b18;backdrop-filter:blur(10px)}.hero{min-height:390px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;background:linear-gradient(145deg,#8dcaff,#d8d5ff 58%,#ffe8bb)}.hero:before,.hero:after{content:"✦";position:absolute;color:white;font-size:35px;animation:twinkle 2s infinite alternate}.hero:before{left:12%;top:20%}.hero:after{right:12%;top:31%}@keyframes twinkle{to{opacity:.25;transform:scale(.7)}}.lv{font-weight:1000;background:#ffffffcf;border-radius:99px;padding:6px 15px;z-index:1}.heroimg{height:245px;width:min(75%,390px);object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 9px 5px #485b7a40);animation:bob 2.5s ease-in-out infinite;z-index:1}@keyframes bob{50%{transform:translateY(-7px)}}.bubble{z-index:1;background:white;padding:8px 17px;border-radius:16px;font-weight:850;box-shadow:0 4px 14px #52688b20}.xpbar{width:min(78%,360px);height:13px;background:#ffffffb9;border-radius:99px;overflow:hidden;margin-top:9px;z-index:1}.xpfill{height:100%;width:0;background:linear-gradient(90deg,#ffca45,#ff975b);transition:width .2s}.tiny{font-size:12px;color:var(--muted);margin-top:5px}.sectiontitle{font-size:18px;font-weight:950;margin:0 0 11px}.stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e9edf5;font-weight:800}.stat:last-of-type{border:0}.primary{background:linear-gradient(#ffe17b,#ffbd36);border:1px solid #efb53d;border-radius:14px;padding:12px 14px;width:100%;font-weight:950;color:#593d00;box-shadow:0 4px 0 #d99e2c;margin-top:10px}.primary:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#f0f3ff;border:1px solid var(--line);border-radius:12px;padding:10px;font-weight:850}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.grow{flex:1}.nav{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:13px}.nav button{background:#ffffffdf;border:1px solid var(--line);border-radius:14px;padding:10px 5px;font-weight:900;font-size:13px}.nav button.active{background:linear-gradient(135deg,#e9e5ff,#dcecff);border:2px solid #8e83e8;box-shadow:0 4px 12px #8e83e822}.content{margin-top:13px;min-height:190px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:9px}.tile{border:1px solid var(--line);border-radius:18px;background:linear-gradient(155deg,#fff,#f5f7ff);padding:12px;text-align:center;box-shadow:0 5px 14px #52688b0b}.tile.selected{border:2px solid #9b7cf2;background:#f1ebff}.tile img{width:100%;height:105px;object-fit:contain;mix-blend-mode:multiply}.tile b{display:block;font-size:14px}.tile small{color:var(--muted)}.tile button{margin-top:7px;width:100%}.action{background:linear-gradient(135deg,#f0f2ff,#e7edff);border:1px solid #d7def2;border-radius:12px;padding:9px;font-weight:850}.action:disabled{opacity:.42;cursor:not-allowed}.pet-emoji{font-size:46px;padding:12px}.heroimg{cursor:pointer}.listitem{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #e9edf5;padding:11px 0}.listitem:last-child{border:0}.notice{font-size:12px;color:var(--muted);line-height:1.5;margin-top:12px}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#26324c;color:white;padding:11px 17px;border-radius:99px;opacity:0;pointer-events:none;transition:.2s;z-index:9}.toast.show{opacity:1}.modal{position:fixed;inset:0;background:#17233c77;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal.open{display:flex}.modalbox{background:white;border-radius:20px;padding:20px;max-width:420px;width:100%;box-shadow:0 20px 60px #17233c55}.evol{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.evol img{width:100%;height:95px;object-fit:contain;background:#f3f4fc;border-radius:12px}.evol small{display:block;text-align:center;font-weight:850;margin-top:5px}.hidden{display:none!important}
 @media(max-width:760px){body{padding:10px}.layout{grid-template-columns:1fr}.hero{min-height:340px}.heroimg{height:205px}.nav{grid-template-columns:repeat(4,1fr)}.nav button{font-size:12px}.evol img{height:75px}}
 </style></head><body><div class="app">
-<header class="top"><div class="brand">👑 이찬우키우기</div><div class="resources"><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">💎 <span id="gems">0</span></div><button class="secondary" id="accountBtn">👤 계정 로그인</button><button class="secondary" id="settings">⚙️</button></div></header>
+<header class="top"><div class="brand">👑 이찬우키우기</div><div class="resources"><div class="pill">🪙 <span id="coins">0</span></div><div class="pill">💎 <span id="gems">0</span></div><button class="secondary" id="accountBtn">👤 계정 로그인</button><button class="secondary" id="musicToggle" aria-pressed="false">🎵 노래 켜기</button><label class="pill" style="display:flex;align-items:center;gap:7px;font-size:12px">🔊 <input id="musicVolume" type="range" min="0" max="100" value="25" style="width:76px;accent-color:#8e72e8" aria-label="노래 음량"></label><button class="secondary" id="settings">⚙️</button></div></header>
 <main class="layout">
 <section class="card hero"><div class="lv">Lv. <span id="level">1</span> · <span id="stage">꼬꼬마 찬우</span></div><img class="heroimg" id="heroimg" alt="이찬우 캐릭터"><div class="bubble" id="bubble">오늘도 화이팅! :)</div><div class="xpbar"><div class="xpfill" id="xpfill"></div></div><div class="tiny"><span id="xp">0</span> / <span id="need">100</span> 경험치 · 초당 <b id="rate">10</b> 코인</div></section>
 <aside class="card"><h2 class="sectiontitle">⭐ 능력치</h2><div class="stat"><span>⚔️ 공격력</span><b id="attack">10</b></div><div class="stat"><span>❤️ 체력</span><b id="hp">100</b></div><div class="stat"><span>🪙 코인 획득량</span><b id="coinbonus">100%</b></div><button class="primary" id="upgrade">⬆️ 능력 강화 · 1,000 🪙</button><button class="secondary" id="train" style="width:100%;margin-top:9px">💪 훈련하기 · 경험치 +25</button><div class="notice" id="offline"></div><hr style="border:0;border-top:1px solid var(--line);margin:13px 0"><div class="row"><b class="grow">🎁 출석 보상</b><button class="secondary" id="daily">오늘 보상 받기</button></div><div class="tiny" id="dailyNote">매일 한 번 1,000 코인과 보석 5개를 받을 수 있어요.</div><div class="row" style="margin-top:10px"><b class="grow">✨ 캐릭터 진화</b><button class="secondary" id="evolution">진화 보기</button></div><div class="evol" id="evol"></div></aside>
@@ -139,4 +139,46 @@ if(b.id==="draw"){if(S.gems>=20){S.gems-=20;let choices=[1,2,3],pick=choices[Mat
 };
 let last=S.last||Date.now(),elapsed=Math.min(8*3600,Math.max(0,(Date.now()-last)/1000));if(elapsed>5){let reward=elapsed*rate();earnCoins(reward);$("offline").textContent=`다시 만나서 반가워요! 자리를 비운 ${Math.floor(elapsed/60)}분 동안 ${fmt(reward)} 코인을 모았어요.`;save()}
 render();tab("character");updateAccountButton();setInterval(()=>{let r=rate();earnCoins(r);addXP(Math.max(1,Math.floor(r/20)));save();render()},1000);
+
+// 오리지널 신나는 8비트풍 배경 음악: 외부 음원이나 저작권 곡을 사용하지 않습니다.
+(()=>{
+ const toggle=document.getElementById('musicToggle');
+ const volume=document.getElementById('musicVolume');
+ if(!toggle||!volume)return;
+ let ctx=null, master=null, timer=null, step=0, playing=false;
+ const melody=[783.99,987.77,1174.66,987.77,1046.5,1174.66,1318.51,1174.66,987.77,783.99,880,987.77,1174.66,1318.51,1567.98,1318.51,
+               1174.66,987.77,1046.5,1174.66,1318.51,1174.66,987.77,880,783.99,880,987.77,1174.66,1318.51,1174.66,987.77,783.99];
+ const bass=[130.81,130.81,164.81,164.81,174.61,174.61,196,196,146.83,146.83,174.61,174.61,196,196,220,220];
+ function tone(freq,duration,when,type,gain){
+   const osc=ctx.createOscillator(), amp=ctx.createGain();
+   osc.type=type; osc.frequency.setValueAtTime(freq,when);
+   amp.gain.setValueAtTime(0.0001,when);
+   amp.gain.exponentialRampToValueAtTime(gain,when+0.015);
+   amp.gain.exponentialRampToValueAtTime(0.0001,when+duration);
+   osc.connect(amp); amp.connect(master); osc.start(when); osc.stop(when+duration+0.03);
+ }
+ function tick(){
+   if(!playing||!ctx)return;
+   const now=ctx.currentTime+0.025, n=step%melody.length;
+   tone(melody[n],0.125,now,'square',0.15);
+   if(step%2===0)tone(bass[Math.floor(step/2)%bass.length],0.24,now,'sawtooth',0.075);
+   if(step%4===0)tone(melody[(n+4)%melody.length]*0.5,0.10,now,'triangle',0.055);
+   if(step%4===0)tone(110,0.075,now,'sine',0.07);
+   if(step%4===2)tone(220,0.045,now,'square',0.018);
+   step++;
+ }
+ function setVolume(){if(master)master.gain.setTargetAtTime(Number(volume.value)/100*0.32,ctx.currentTime,0.04)}
+ async function start(){
+   const AC=window.AudioContext||window.webkitAudioContext;
+   if(!AC){toggle.textContent='🎵 지원되지 않는 브라우저';return}
+   if(!ctx){ctx=new AC();master=ctx.createGain();master.connect(ctx.destination);setVolume()}
+   await ctx.resume(); playing=true; step=0; tick(); timer=setInterval(tick,150);
+   toggle.textContent='⏸ 노래 끄기';toggle.setAttribute('aria-pressed','true');
+ }
+ function stop(){playing=false;if(timer){clearInterval(timer);timer=null}toggle.textContent='🎵 노래 켜기';toggle.setAttribute('aria-pressed','false')}
+ toggle.addEventListener('click',()=>{if(playing)stop();else start().catch(()=>{stop();toggle.textContent='🎵 다시 재생'})});
+ volume.addEventListener('input',setVolume);
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing)stop()});
+})();
+
 </script></body></html>
