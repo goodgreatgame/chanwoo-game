@@ -976,6 +976,73 @@ window.addEventListener('beforeunload',()=>{clearTimeout(reflexTimer);clearInter
   document.head.appendChild(note);
 })();
 </script>
+<script>
+/* ===== GRAND UPDATE 1단계: 장비 뽑기·인벤토리 (추가 전용 애드온) ===== */
+(()=>{
+const G=['일반','고급','희귀','영웅','전설','신화','초월'],GC=['#9aa0b5','#5fd47a','#4aa8ff','#b36bff','#ffb43a','#ff5470','#7ff3ff'],GP=[50,28,14,5.5,2,.45,.05];
+const SL={weapon:'무기',armor:'갑옷',helmet:'투구',gloves:'장갑',boots:'신발',ring:'반지',necklace:'목걸이'};
+const SN={atk:'공격력',hp:'최대 체력',def:'방어력',crit_rate:'치명타 확률%',crit_dmg:'치명타 피해%',atk_spd:'공격 속도%',skill_dmg:'스킬 피해%',boss_dmg:'보스 피해%',exp_gain:'경험치%',coin_gain:'코인%'};
+const E={defs:{},inv:[],eq:{},stone:0,pity:0,sort:'grade',f:'all',q:'',busy:false,sel:null};
+const val=(it,k)=>+(it.stats[k]*(1+.08*it.enhance)).toFixed(1);
+const byId=id=>E.inv.find(i=>i.id===id);
+function totals(eq){eq=eq||E.eq;const t={};let n=0;for(const s in eq){const it=byId(eq[s]);if(!it)continue;n++;for(const k in it.stats)t[k]=(t[k]||0)+val(it,k)}
+ const m=n>=7?1.15:n>=4?1.05:1;if(m>1)for(const k in t)t[k]=+(t[k]*m).toFixed(1);t._n=n;t._m=m;return t}
+const slotOf=it=>(E.defs[it.def_id]||{}).slot, nameOf=it=>(E.defs[it.def_id]||{}).name||'?';
+const sd=s=>Object.entries(s).map(([k,v])=>SN[k]+' +'+v).join(' · ');
+async function sync(){const r=await sb.from('player_stats').select('coins,gems').eq('user_id',currentUser.id).maybeSingle();if(r.data){S.coins=r.data.coins;S.gems=r.data.gems}try{render()}catch(e){}}
+async function load(){if(!currentUser)return;const u=currentUser.id;
+ const [d,i,e,m,p]=await Promise.all([sb.from('item_definitions').select('*'),sb.from('player_inventory').select('*').eq('user_id',u),sb.from('player_equipment').select('*').eq('user_id',u),sb.from('player_materials').select('*').eq('user_id',u).maybeSingle(),sb.from('gacha_pity').select('*').eq('user_id',u).maybeSingle()]);
+ if(d.error||i.error)throw (d.error||i.error);
+ E.defs=Object.fromEntries((d.data||[]).map(x=>[x.id,x]));E.inv=i.data||[];E.eq={};(e.data||[]).forEach(x=>E.eq[x.slot]=x.item_id);
+ E.stone=(m.data&&m.data.enhance_stone)||0;E.pity=(p.data&&p.data.pulls)||0}
+const active=()=>document.querySelector('#nav [data-tab="equip"].active');
+function draw(){if(!active())return;const c=$('content');if(!c)return;
+ if(!currentUser){c.innerHTML='<h2 class="sectiontitle">⚔️ 장비</h2><p>로그인 후 이용할 수 있어요.</p>';return}
+ const t=totals(),pc=E.sel;
+ let list=E.inv.filter(i=>(E.f==='all'||slotOf(i)===E.f)&&(!E.q||nameOf(i).includes(E.q)));
+ list.sort((a,b)=>E.sort==='grade'?b.grade-a.grade||b.enhance-a.enhance:E.sort==='enh'?b.enhance-a.enhance:nameOf(a).localeCompare(nameOf(b)));
+ const eqd=Object.values(E.eq);
+ const row=it=>{const s=slotOf(it),on=eqd.includes(it.id),cur=byId(E.eq[s]);let cmp='';
+  if(!on){const e2={...E.eq,[s]:it.id},t2=totals(e2);cmp=['atk','hp','def'].map(k=>{const d=+((t2[k]||0)-(t[k]||0)).toFixed(1);return d?`<span style="color:${d>0?'#6dff9a':'#ff7a7a'}">${SN[k]} ${d>0?'+':''}${d}</span>`:''}).join(' ')}
+  return `<div class="listitem" style="border-left:4px solid ${GC[it.grade]};padding-left:9px;${it.grade>=4?'box-shadow:0 0 12px '+GC[it.grade]+'55;':''}"><div style="min-width:0"><b style="color:${GC[it.grade]}">[${G[it.grade]}] ${nameOf(it)} +${it.enhance}</b> <small>${SL[s]}${on?' · 장착 중':''}${it.locked?' · 🔒':''}</small><div class="tiny">${sd(Object.fromEntries(Object.keys(it.stats).map(k=>[k,val(it,k)])))}</div><div class="tiny">✨ ${(E.defs[it.def_id]||{}).passive_text||''} <i>(효과 연동 예정)</i></div>${cmp?`<div class="tiny">장착 시: ${cmp}</div>`:''}</div>
+  <div class="row" style="justify-content:flex-end">${on?`<button class="action" data-a="un" data-s="${s}">해제</button>`:`<button class="action" data-a="eq" data-i="${it.id}">장착</button>`}<button class="action" data-a="lock" data-i="${it.id}">${it.locked?'🔓':'🔒'}</button><button class="action" data-a="enh" data-i="${it.id}" ${it.enhance>=15?'disabled':''}>강화</button><button class="action" data-a="dis" data-i="${it.id}" ${it.locked||on||it.trade_locked?'disabled':''}>분해</button></div></div>`};
+ c.innerHTML=`<h2 class="sectiontitle">⚔️ 장비 뽑기 & 인벤토리</h2>
+ <div class="card"><div class="row"><button class="primary grow" data-a="pull" data-c="coins" data-n="1">코인 1회 · 1,000🪙</button><button class="primary grow" data-a="pull" data-c="coins" data-n="10">코인 10연 · 9,500🪙</button></div>
+ <div class="row"><button class="primary grow" data-a="pull" data-c="gems" data-n="1">보석 1회 · 100💎</button><button class="primary grow" data-a="pull" data-c="gems" data-n="10">보석 10연 · 950💎</button></div>
+ <div class="tiny">천장 ${E.pity}/50 (50번째 뽑기는 영웅 이상 확정) · 강화석 ${fmt(E.stone)}개 · 중복(같은 아이템·등급)은 강화석으로 변환</div>
+ <div class="tiny">확률: ${G.map((g,i)=>`<span style="color:${GC[i]}">${g} ${GP[i]}%</span>`).join(' · ')}</div></div>
+ <div class="card" style="margin-top:9px"><b>장착 능력치 (${t._n}/7)${t._m>1?' · 세트 보너스 ×'+t._m:''}</b><div class="tiny">${Object.keys(t).filter(k=>k[0]!=='_').map(k=>SN[k]+' +'+t[k]).join(' · ')||'장착한 장비가 없어요'}</div><div class="tiny">현재 반영: 공격력 → 클릭/공격 피해 (나머지 능력치는 순차 연동)</div></div>
+ <div class="row" style="margin:9px 0"><select id="eqF" class="secondary"><option value="all">전체</option>${Object.entries(SL).map(([k,v])=>`<option value="${k}" ${E.f===k?'selected':''}>${v}</option>`).join('')}</select><select id="eqS" class="secondary"><option value="grade">등급순</option><option value="enh" ${E.sort==='enh'?'selected':''}>강화순</option><option value="name" ${E.sort==='name'?'selected':''}>이름순</option></select><input id="eqQ" class="secondary grow" placeholder="검색" value="${E.q}"></div>
+ <div>${list.map(row).join('')||'<p class="tiny">아이템이 없어요. 뽑기를 해보세요!</p>'}</div>`;
+ const q=$('eqQ');$('eqF').onchange=e=>{E.f=e.target.value;draw()};$('eqS').onchange=e=>{E.sort=e.target.value;draw()};q.onchange=e=>{E.q=e.target.value.trim();draw()}}
+function showResult(res){const best=Math.max(...res.map(r=>r.grade)),o=document.createElement('div');
+ o.style.cssText=`position:fixed;inset:0;z-index:50;background:#000c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;overflow:auto;animation:gfade .4s`;
+ o.innerHTML=`<style>@keyframes gfade{from{opacity:0}}@keyframes gpop{from{transform:scale(.3) rotate(-8deg);opacity:0}}</style><h2 style="color:${GC[best]};text-shadow:0 0 20px ${GC[best]}">${best>=3?'✨ '+G[best]+' 획득! ✨':'뽑기 결과'}</h2><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">${res.map((r,i)=>`<div style="width:104px;padding:9px;border-radius:14px;background:#171a36;border:2px solid ${GC[r.grade]};box-shadow:0 0 ${r.grade*5}px ${GC[r.grade]};text-align:center;animation:gpop .35s ${i*.08}s both"><b style="color:${GC[r.grade]};font-size:12px">${G[r.grade]}</b><div style="font-size:13px">${r.name}</div><small>${r.dup?'중복 → 강화석 +'+r.stone:SL[r.slot]}</small></div>`).join('')}</div><button class="primary" style="max-width:240px">확인</button>`;
+ o.onclick=e=>{if(e.target.tagName==='BUTTON'||e.target===o)o.remove()};document.body.appendChild(o)}
+async function act(b){const a=b.dataset.a,id=b.dataset.i;if(E.busy)return;E.busy=true;
+ try{
+  if(a==='pull'){await sb.from('player_stats').update({coins:Math.floor(S.coins),gems:Math.floor(S.gems)}).eq('user_id',currentUser.id);
+   const {data,error}=await sb.rpc('gacha_pull',{p_currency:b.dataset.c,p_count:+b.dataset.n});if(error)throw error;await sync();await load();showResult(data.results)}
+  else if(a==='eq'){const {error}=await sb.rpc('equip_item',{p_item:id});if(error)throw error;await load();toast('장착했어요')}
+  else if(a==='un'){const {error}=await sb.rpc('unequip_slot',{p_slot:b.dataset.s});if(error)throw error;await load()}
+  else if(a==='lock'){const {error}=await sb.rpc('toggle_item_lock',{p_item:id});if(error)throw error;await load()}
+  else if(a==='dis'){if(!confirm('분해할까요? 되돌릴 수 없어요.'))return;const {data,error}=await sb.rpc('dismantle_items',{p_ids:[id]});if(error)throw error;await load();toast('강화석 +'+data)}
+  else if(a==='enh'){await sb.from('player_stats').update({coins:Math.floor(S.coins),gems:Math.floor(S.gems)}).eq('user_id',currentUser.id);const {data,error}=await sb.rpc('enhance_item',{p_item:id});if(error)throw error;await sync();await load();toast(data.success?'강화 성공! +'+data.level:'강화 실패 ('+data.chance+'% 확률)')}
+ }catch(e){toast('실패: '+(e.message||e).replace('not enough materials','재료(코인/강화석)가 부족해요').replace(/not enough (coins|gems)/,'재화가 부족해요'))}
+ finally{E.busy=false;draw()}}
+const _tab=window.tab;
+window.tab=async function(t){if(t!=='equip')return _tab(t);
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='equip'));
+ const c=$('content');c.innerHTML='<p>불러오는 중...</p>';c.onclick=e=>{const b=e.target.closest('[data-a]');if(b)act(b)};
+ try{await load()}catch(e){c.innerHTML='<p>장비 데이터를 불러오지 못했어요. 1단계 SQL이 실행됐는지 확인해 주세요.<br><small>'+(e.message||e)+'</small></p>';return}draw()};
+const _cp=window.clickPower;
+if(typeof _cp==='function')window.clickPower=()=>_cp()+Math.floor((totals().atk||0)*.35);
+const nav=$('nav');if(nav&&!nav.querySelector('[data-tab="equip"]'))nav.insertAdjacentHTML('beforeend','<button data-tab="equip">⚔️ 장비</button>');
+/* 로그인 직후 장비 능력치를 전투에 반영하기 위해 미리 로드 */
+setInterval(()=>{if(currentUser&&!E.loaded){E.loaded=true;load().catch(()=>{E.loaded=false})}},3000);
+})();
+
+</script>
 </body></html>
 <style id="chibi-art-upgrade">
 .tile{position:relative;overflow:hidden;background:linear-gradient(155deg,#30265f,#171633)!important}
