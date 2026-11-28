@@ -188,7 +188,7 @@ button:focus-visible,input:focus-visible{outline:2px solid #ffe08a!important;out
 <section class="card hero"><div class="lv">Lv. <span id="level">1</span> · <span id="stage">꼬꼬마 찬우</span></div><img class="heroimg" id="heroimg" alt="이찬우 캐릭터"><div class="bubble" id="bubble">오늘도 화이팅! :)</div><div class="xpbar"><div class="xpfill" id="xpfill"></div></div><div class="tiny"><span id="xp">0</span> / <span id="need">100</span> 경험치 · 초당 <b id="rate">10</b> 코인</div></section>
 <aside class="card"><h2 class="sectiontitle">⭐ 능력치</h2><div class="stat"><span>⚔️ 공격력</span><b id="attack">10</b></div><div class="stat"><span>❤️ 체력</span><b id="hp">100</b></div><div class="stat"><span>🪙 코인 획득량</span><b id="coinbonus">100%</b></div><button class="primary" id="upgrade">⬆️ 능력 강화 · 1,000 🪙</button><button class="secondary" id="train" style="width:100%;margin-top:9px">💪 훈련하기 · 경험치 +25</button><div class="notice" id="offline"></div><hr style="border:0;border-top:1px solid var(--line);margin:13px 0"><div class="row"><b class="grow">🎁 출석 보상</b><button class="secondary" id="daily">오늘 보상 받기</button></div><div class="tiny" id="dailyNote">매일 한 번 1,000 코인과 보석 5개를 받을 수 있어요.</div><div class="row" style="margin-top:10px"><b class="grow">✨ 캐릭터 진화</b><button class="secondary" id="evolution">진화 보기</button></div><div class="evol" id="evol"></div></aside>
 </main>
-<nav class="nav" id="nav"><button class="active" data-tab="character">👤 캐릭터</button><button data-tab="growth">⬆️ 성장</button><button data-tab="items">🎒 아이템</button><button data-tab="pets">🐣 펫</button><button data-tab="shop">🏪 상점</button><button data-tab="missions">📋 미션</button><button data-tab="achievements">🏆 업적</button><button data-tab="room">🏠 방 꾸미기</button><button data-tab="gacha">🎁 뽑기</button><button data-tab="ranking">🥇 랭킹</button><button data-tab="battle">⚔️ 전투</button></nav>
+<nav class="nav" id="nav"><button class="active" data-tab="character">👤 캐릭터</button><button data-tab="growth">⬆️ 성장</button><button data-tab="items">🎒 아이템</button><button data-tab="pets">🐣 펫</button><button data-tab="shop">🏪 상점</button><button data-tab="missions">📋 미션</button><button data-tab="achievements">🏆 업적</button><button data-tab="room">🏠 방 꾸미기</button><button data-tab="gacha">🎁 뽑기</button><button data-tab="ranking">🥇 랭킹</button><button data-tab="battle">⚔️ 전투</button><button data-tab="social">🌐 유저 광장</button><button data-tab="minigames">🎮 미니게임</button></nav>
 <section class="card content" id="content"></section>
 <div class="notice">진행 상황은 자동 저장됩니다. 로그인하면 기본 성장 데이터가 Supabase와 동기화됩니다. 방치 보상은 최대 8시간까지 계산됩니다.</div>
 </div><div class="toast" id="toast"></div><div class="modal" id="modal"><div class="modalbox"><div class="row"><b class="grow" id="modalTitle">설정</b><button class="secondary" id="closeModal">닫기 ✕</button></div><div id="modalBody" style="margin-top:12px"></div></div></div>
@@ -706,7 +706,7 @@ function battleFX(label='HIT',icon='💥'){
  const banner=document.createElement('div');banner.className='battle-banner skill-banner '+type;banner.textContent=label;banner.style.setProperty('--skill-tone',tone);stage.appendChild(banner);setTimeout(()=>banner.remove(),950);
  const burst=document.createElement('div');burst.className='skill-burst '+type+(boss?' boss-burst':'');burst.style.setProperty('--skill-tone',tone);burst.textContent=glyph;stage.appendChild(burst);setTimeout(()=>burst.remove(),900);
  const ring=document.createElement('div');ring.className='skill-ring '+type;ring.style.setProperty('--skill-tone',tone);stage.appendChild(ring);setTimeout(()=>ring.remove(),800);
- const rect=stage.getBoundingClientRect(),count=type==='impact'?8:16;
+ const rect=stage.getBoundingClientRect(),count=type==='impact'?4:7;
  for(let i=0;i<count;i++){const sp=document.createElement('span');sp.className='battle-spark skill-particle '+type;sp.textContent=type==='fire'?'✦':type==='ice'?'❄':type==='lightning'?'ϟ':type==='heal'?'✚':glyph;sp.style.left=(rect.width*.5+(Math.random()-.5)*(boss?170:120))+'px';sp.style.top=(rect.height*.55+(Math.random()-.5)*75)+'px';sp.style.setProperty('--dx',((Math.random()-.5)*(boss?240:180))+'px');sp.style.setProperty('--dy',(-45-Math.random()*130)+'px');sp.style.setProperty('--skill-tone',tone);stage.appendChild(sp);setTimeout(()=>sp.remove(),850);}
  if(boss){const flash=document.createElement('div');flash.className='boss-screen-flash';flash.style.setProperty('--skill-tone',tone);stage.appendChild(flash);setTimeout(()=>flash.remove(),500);}
 }
@@ -906,6 +906,46 @@ const style=document.createElement('style');style.textContent=`.skill-banner{fon
 })();
 
 </script>
+
+<script id="chanwoo-social-minigame-upgrade">
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const dayKey=()=>new Date().toLocaleDateString('sv-SE');
+const ensure=()=>{S.minigames=S.minigames||{day:'',claimed:{},plays:0};if(S.minigames.day!==dayKey()){S.minigames.day=dayKey();S.minigames.claimed={};S.minigames.plays=0;save();}};
+let reflexTimer=null,reflexStart=0,reflexState='idle',treasurePick=-1,treasureGoal=-1,treasureDone=false;
+function reward(id,coins,gems=0){ensure();if(S.minigames.claimed[id]){toast('오늘 이 미니게임 보상은 이미 받았어요!');return false;}S.minigames.claimed[id]=true;S.minigames.plays++;S.coins+=coins;S.gems=(S.gems||0)+gems;save();render();toast(`성공! 코인 +${fmt(coins)}${gems?` · 보석 +${gems}`:''}`);return true;}
+function renderMini(){ensure();const c=$('content');if(!c)return;const claimed=S.minigames.claimed;
+c.innerHTML=`<h2 class="sectiontitle">🎮 찬우의 미니게임 아케이드</h2><p class="notice">매일 게임마다 한 번씩 보상을 받을 수 있어요. 보상은 본 게임 재화에 바로 추가됩니다.</p><div class="grid" style="margin-top:12px">
+<div class="tile" style="padding:16px"><div style="font-size:42px">💎</div><b>보물 상자 찾기</b><small>상자 9개 중 보물이 든 상자를 찾아보세요.</small><div id="treasureBoard" class="grid" style="grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px">${Array.from({length:9},(_,i)=>`<button class="action" data-treasure="${i}" style="min-height:48px;font-size:22px">❔</button>`).join('')}</div><small id="treasureMsg">상자를 하나 골라보세요!</small><button class="secondary" id="treasureReset" style="margin-top:8px">다시 섞기</button><button class="action" id="treasureClaim" ${claimed.treasure?'disabled':''} style="margin-top:8px">${claimed.treasure?'오늘 보상 받음':'보상 받기 · 800 코인'}</button></div>
+<div class="tile" style="padding:16px"><div style="font-size:42px">⚡</div><b>반응 속도 테스트</b><small>화면이 초록색으로 바뀌면 빠르게 눌러요.</small><button class="action" id="reflexBtn" style="width:100%;min-height:105px;margin-top:10px;background:#5b3c83">시작하기</button><div id="reflexMsg" class="tiny">준비되면 시작 버튼을 눌러주세요.</div><button class="action" id="reflexClaim" ${claimed.reflex?'disabled':''} style="margin-top:8px">${claimed.reflex?'오늘 보상 받음':'보상 받기 · 최대 1,200 코인'}</button></div>
+<div class="tile" style="padding:16px"><div style="font-size:42px">🛡️</div><b>몬스터 피하기</b><small>10초 동안 몬스터를 피해 살아남으세요. 아래 회피 버튼을 연속으로 눌러요.</small><div id="dodgeArena" style="height:82px;border-radius:12px;background:linear-gradient(135deg,#171b3c,#35204f);display:grid;place-items:center;font-size:30px;margin:10px 0">👹　⚔️　🧍</div><div id="dodgeMsg" class="tiny">시작을 누르면 도전이 시작돼요.</div><button class="action" id="dodgeStart">도전 시작</button><button class="secondary" id="dodgeBtn" disabled>💨 회피!</button><button class="action" id="dodgeClaim" ${claimed.dodge?'disabled':''} style="margin-top:8px">${claimed.dodge?'오늘 보상 받음':'성공 보상 · 1,000 코인'}</button></div></div><p class="tiny" style="margin-top:12px">오늘 미니게임 완료: ${Object.keys(claimed).length}/3 · 누적 도전 ${S.minigames.plays||0}회</p>`;
+}
+function setupTreasure(){treasureGoal=Math.floor(Math.random()*9);treasurePick=-1;treasureDone=false;const board=$('treasureBoard');if(board)board.querySelectorAll('button').forEach(b=>{b.textContent='❔';b.disabled=false;});const m=$('treasureMsg');if(m)m.textContent='상자를 하나 골라보세요!';}
+let dodgeInterval=null,dodgeTime=0,dodgeScore=0,dodgeActive=false;
+function setupSocial(){const c=$('content');if(!c)return;c.innerHTML=`<h2 class="sectiontitle">🌐 유저 광장</h2><p class="notice">친구, 거래, 파티, 실시간 레이드를 한곳에서 이용하는 공간이에요. 온라인 기능을 켜려면 아래 데이터베이스 설정을 먼저 완료해야 합니다.</p><div class="tile" style="padding:16px"><b>👥 친구 찾기</b><p class="tiny">닉네임으로 친구를 검색하고 초대할 수 있어요.</p><div class="row"><input id="friendSearch" placeholder="친구 닉네임" style="flex:1;min-width:0;padding:10px;border-radius:9px;border:1px solid #667"><button class="action" id="friendSearchBtn">검색</button></div><div id="friendResults" class="tiny" style="margin-top:10px">로그인 후 이용할 수 있어요.</div></div><div class="grid" style="margin-top:12px"><div class="tile" style="padding:14px"><b>🤝 유저 거래</b><p class="tiny">아이템 교환과 공개 거래소</p><span class="pill">서버 거래 기능 설정 필요</span></div><div class="tile" style="padding:14px"><b>⚔️ 파티 & 협동 레이드</b><p class="tiny">친구와 파티를 만들고 보스를 함께 공략</p><span class="pill">실시간 서버 설정 필요</span></div></div><div id="socialStatus" class="tiny" style="margin-top:12px">${currentUser?'로그인됨 · 온라인 기능 설정을 확인하는 중':'먼저 계정에 로그인해 주세요.'}</div><button class="secondary" id="socialRefresh" style="margin-top:8px">연결 상태 확인</button>`;}
+async function searchFriends(){const out=$('friendResults');if(!currentUser){if(out)out.textContent='친구 검색은 로그인 후 이용할 수 있어요.';return;}const q=$('friendSearch')?.value?.trim();if(!q){toast('닉네임을 입력해 주세요.');return;}if(out)out.textContent='검색 중...';try{const {data,error}=await sb.from('profiles').select('id,username').ilike('username',`%${q}%`).neq('id',currentUser.id).limit(10);if(error)throw error;if(!data?.length){out.textContent='검색 결과가 없어요.';return;}out.innerHTML=data.map(u=>`<div class="listitem"><span>👤 ${String(u.username||'이름 없음').replace(/[&<>"']/g,'')}</span><button class="action" data-friend-send="${u.id}">친구 신청</button></div>`).join('');}catch(e){out.textContent='친구 검색 설정이 필요해요: '+(e.message||e);}}
+async function sendFriend(id){if(!currentUser)return toast('먼저 로그인해 주세요.');try{const {error}=await sb.from('friend_requests').insert({sender_id:currentUser.id,receiver_id:id,status:'pending'});if(error)throw error;toast('친구 신청을 보냈어요!');}catch(e){toast('친구 신청 실패: '+(e.message||e));}}
+async function checkSocial(){const st=$('socialStatus');if(!currentUser){if(st)st.textContent='로그인 후 이용할 수 있어요.';return;}try{const {error}=await sb.from('friend_requests').select('id').limit(1);if(error)throw error;if(st)st.textContent='친구 요청 테이블 연결 확인 완료. 거래·파티·레이드는 추가 서버 설정 후 활성화됩니다.';}catch(e){if(st)st.textContent='온라인 기능용 SQL 설정이 아직 적용되지 않았어요. 오류: '+e.message;}}
+document.addEventListener('click',e=>{
+const nav=e.target.closest('#nav button[data-tab]');if(nav&&['minigames','social'].includes(nav.dataset.tab)){e.preventDefault();e.stopImmediatePropagation();document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b===nav));if(nav.dataset.tab==='minigames')renderMini();else{setupSocial();checkSocial();}return;}
+const t=e.target.closest('[data-treasure]');if(t){if(treasurePick!==-1)return;treasurePick=+t.dataset.treasure;const good=treasurePick===treasureGoal;t.textContent=good?'💎':'🪨';t.disabled=true;document.querySelectorAll('[data-treasure]').forEach(b=>b.disabled=true);const m=$('treasureMsg');if(m)m.textContent=good?'보물을 찾았어요! 아래 보상 받기를 눌러주세요.':'아쉽게도 꽝이에요. 다시 섞기를 눌러 도전하세요.';if(good){const claim=$('treasureClaim');if(claim)claim.dataset.won='1';}else{const claim=$('treasureClaim');if(claim)claim.dataset.won='0';}return;}
+if(e.target.closest('#treasureReset')){setupTreasure();return;}
+if(e.target.closest('#treasureClaim')){if(e.target.closest('#treasureClaim').dataset.won==='1')reward('treasure',800);else toast('먼저 보물 상자를 찾아야 해요!');return;}
+if(e.target.closest('#reflexBtn')){const b=$('reflexBtn'),m=$('reflexMsg');if(reflexState==='wait'){clearTimeout(reflexTimer);reflexState='early';b.textContent='너무 빨랐어요!';b.style.background='#8c3c49';m.textContent='초록색이 된 다음 눌러야 해요. 다시 시작해 보세요.';return;}if(reflexState==='green'){const ms=Date.now()-reflexStart;reflexState='done';b.textContent=`${ms}ms`;b.style.background='#287c54';m.textContent=ms<300?'엄청 빠른 반응이에요!':ms<500?'좋은 반응 속도예요!':'조금 더 연습해 봐요!';b.dataset.won=ms<800?'1':'0';return;}reflexState='wait';b.textContent='기다려...';b.style.background='#8c3c49';m.textContent='초록색이 될 때까지 기다리세요!';reflexTimer=setTimeout(()=>{if(reflexState==='wait'){reflexState='green';reflexStart=Date.now();b.textContent='지금 눌러!';b.style.background='#198754';}},900+Math.random()*2400);return;}
+if(e.target.closest('#reflexClaim')){const b=$('reflexBtn');if(b?.dataset.won==='1')reward('reflex',1200,1);else toast('800ms 안에 반응 테스트를 성공해야 보상을 받을 수 있어요!');return;}
+if(e.target.closest('#dodgeStart')){clearInterval(dodgeInterval);dodgeActive=true;dodgeTime=10;dodgeScore=0;const btn=$('dodgeBtn');if(btn)btn.disabled=false;const msg=$('dodgeMsg');if(msg)msg.textContent='10초 생존! 회피 버튼을 빠르게 눌러요.';dodgeInterval=setInterval(()=>{dodgeTime--;const a=$('dodgeArena');if(a)a.textContent=dodgeTime%2?'👹　💥　🧍':'💥　👹　🧍';if(dodgeTime<=0){clearInterval(dodgeInterval);dodgeActive=false;if(btn)btn.disabled=true;if(msg)msg.textContent=`생존 성공! 회피 ${dodgeScore}회`;const claim=$('dodgeClaim');if(claim)claim.dataset.won=dodgeScore>=8?'1':'0';}},1000);return;}
+if(e.target.closest('#dodgeBtn')){if(dodgeActive){dodgeScore++;const msg=$('dodgeMsg');if(msg)msg.textContent=`남은 시간 ${dodgeTime}초 · 회피 ${dodgeScore}회`;const a=$('dodgeArena');if(a)a.textContent='💨　✨　🧍';}return;}
+if(e.target.closest('#dodgeClaim')){if(e.target.closest('#dodgeClaim').dataset.won==='1')reward('dodge',1000,1);else toast('10초 동안 회피를 8회 이상 성공해야 해요!');return;}
+if(e.target.closest('#friendSearchBtn')){searchFriends();return;}
+const f=e.target.closest('[data-friend-send]');if(f){sendFriend(f.dataset.friendSend);return;}
+if(e.target.closest('#socialRefresh')){checkSocial();return;}
+});
+// expose a safe entry point for navigation and retain the original save/render pipeline.
+window.addEventListener('beforeunload',()=>{clearTimeout(reflexTimer);clearInterval(dodgeInterval);});
+})();
+</script>
+
 </body></html>
 <style id="chibi-art-upgrade">
 .tile{position:relative;overflow:hidden;background:linear-gradient(155deg,#30265f,#171633)!important}
@@ -940,6 +980,62 @@ const style=document.createElement('style');style.textContent=`.skill-banner{fon
 .tutorial-panel h3{margin:0 0 7px;color:#ffe17b}.tutorial-panel p{margin:7px 0 13px;line-height:1.55}.tutorial-progress{height:6px;background:#ffffff22;border-radius:99px;overflow:hidden;margin:10px 0}.tutorial-progress span{display:block;height:100%;background:linear-gradient(90deg,#8e72e8,#ffe17b);transition:width .2s}
 .tutorial-actions{display:flex;gap:8px;flex-wrap:wrap}.tutorial-actions button{flex:1;min-width:75px}
 @media(prefers-reduced-motion:reduce){.skill-burst,.skill-ring,.skill-particle,.boss-screen-flash{animation-duration:.01ms!important}}
+
+/* 3D battle polish + mobile performance patch */
+.battle-stage{
+  animation:none!important;
+  background:radial-gradient(ellipse at 50% 88%,#5267a8 0%,#25345f 42%,#111a35 100%)!important;
+  contain:layout paint style;
+  transform:translateZ(0);
+}
+.battle-stage:after{
+  inset:0!important;
+  background:radial-gradient(ellipse at 50% 100%,#9be7ff22,transparent 65%),linear-gradient(120deg,transparent 25%,#ffffff0b 50%,transparent 75%)!important;
+  animation:none!important;
+  opacity:1!important;
+}
+.battle-stage.impact{animation:arenaTap .22s ease-out!important}
+@keyframes arenaTap{0%,100%{transform:translate3d(0,0,0)}30%{transform:translate3d(-3px,0,0)}65%{transform:translate3d(3px,0,0)}}
+#playerFighter,#enemyFighter{perspective:850px;transform-style:preserve-3d}
+.chibi{
+  transform-style:preserve-3d;
+  filter:drop-shadow(0 16px 10px #03061788)!important;
+  will-change:transform;
+  backface-visibility:hidden;
+}
+.chibi .head{
+  background:radial-gradient(ellipse at 32% 22%,#fff0dd 0%,#ffdfc4 27%,#efb18f 72%,#bd796f 100%)!important;
+  box-shadow:inset -7px -8px 10px #9e4d4930,inset 5px 5px 8px #fff9,3px 5px 0 #8d526044,0 7px 12px #080d2450!important;
+  transform:translateZ(13px);
+}
+.chibi .hair{
+  background:linear-gradient(135deg,#ffffff55 0%,var(--hair,#27243b) 24%,var(--hair,#27243b) 72%,#080b18 100%)!important;
+  filter:drop-shadow(2px 4px 2px #080b1877);
+  transform:translateZ(17px);
+}
+.chibi .body{
+  background:linear-gradient(125deg,#ffffffb8 0%,var(--skin) 24%,color-mix(in srgb,var(--skin),#101528 34%) 78%,#111528 100%)!important;
+  box-shadow:inset 5px 4px 8px #ffffff70,inset -7px -8px 9px #090d2c55,0 7px 12px #05091c66!important;
+  transform:translateZ(10px);
+}
+.chibi .arm,.chibi .leg{
+  box-shadow:inset 4px 3px 5px #ffffff66,inset -4px -5px 6px #080d2444,0 5px 8px #03061755!important;
+}
+.chibi .emblem,.chibi .accessory{transform:translateZ(24px);filter:drop-shadow(0 4px 3px #05081799)}
+.chibi .aura{filter:blur(5px);opacity:.48;transform:translateZ(-8px)}
+.chibi.enemy{filter:drop-shadow(0 18px 12px #fa315d44)!important}
+.chibi.attacking{animation:chibiAttack .42s cubic-bezier(.2,.8,.2,1)!important}
+.chibi.hit{animation:chibiHit .32s ease-out!important;filter:brightness(1.22) saturate(1.25) drop-shadow(0 0 8px #ff6b6b)!important}
+.chibi.casting{animation:chibiCast .55s ease-in-out!important;filter:drop-shadow(0 0 12px #a8e8ff)!important}
+.battle-spark{font-size:clamp(22px,5vw,30px);filter:drop-shadow(0 2px 5px #0008)!important;will-change:transform,opacity}
+.battle-banner{ text-shadow:0 3px 0 #39236f,0 0 12px var(--skill-tone,#8feaff)!important; }
+.skill-burst{filter:drop-shadow(0 0 15px var(--skill-tone,#fff))!important}
+.skill-ring{will-change:transform,opacity}
+.boss-screen-flash{pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+ .battle-stage,.battle-stage:after,.chibi,.battle-spark,.battle-banner,.skill-ring{animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+
 </style>
 <script id="chanwoo-tutorial-upgrade">
 (()=>{
