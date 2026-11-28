@@ -3677,6 +3677,10 @@ let coopParty = null;
 let coopRaidId = null;
 let coopRaid = null;
 let coopBosses = [];
+// 협동 레이드 스킬 UI 상태. 실제 MP/쿨타임 판정은 coop_attack_boss RPC가 최종 처리합니다.
+let coopSkillMp = 200;
+let coopSkillMaxMp = 200;
+let coopSkillCooldowns = {};
 
 async function coopRpc(name, args = {}) {
   if (!sb || !user) throw new Error('로그인이 필요합니다.');
@@ -3781,7 +3785,7 @@ function coopRender() {
         <div class="min-w-0 text-center"><div class="mb-2 truncate text-[10px] font-black text-rose-200">BOSS</div><div class="mx-auto grid aspect-square w-full max-w-32 place-items-center rounded-2xl border border-rose-300/30 text-5xl shadow-xl sm:text-6xl" style="background:radial-gradient(circle at 35% 25%,#8b5cf6,#31205f 55%,#160e31);box-shadow:0 0 28px rgba(168,85,247,.25)">${bossEmoji}</div><div class="mt-2 truncate text-[11px] font-black text-rose-200">${esc(coopRaid.boss_name || '협동 보스')}</div><div class="mt-1 text-[10px] font-black tabular-nums text-rose-300">${nf(hp)} / ${nf(maxHp)}</div><div class="mt-1.5 h-2.5 overflow-hidden rounded-full border border-white/10 bg-slate-900"><div class="h-full rounded-full bg-gradient-to-r from-rose-700 via-red-500 to-orange-400 transition-all" style="width:${pct}%"></div></div><div class="mt-1 text-[9px] text-slate-400">보스 체력 ${pct.toFixed(1)}%</div></div>
       </div>
       <div class="mx-3 mb-3 rounded-xl border border-white/10 bg-black/25 p-3 sm:mx-5"><div class="flex items-center justify-between text-[10px]"><span class="font-bold text-slate-300">⏱ 남은 전투 시간</span><b class="tabular-nums text-amber-300">${coopRaid.seconds_left == null ? '정보 없음' : nf(coopRaid.seconds_left) + '초'}</b></div>
-        ${!cleared && !ended ? `<div class="mt-3 grid grid-cols-2 gap-2"><button onclick="AXO.coopAttack('NORMAL')" class="rounded-xl border border-rose-300/30 bg-gradient-to-b from-rose-600 to-rose-800 px-2 py-3 text-xs font-black text-white shadow-lg">⚔️ 일반 공격</button><button onclick="AXO.coopAttack('ALL')" class="rounded-xl border border-amber-300/30 bg-gradient-to-b from-amber-500 to-orange-700 px-2 py-3 text-xs font-black text-white shadow-lg">💥 약점 공격</button></div>` : ''}
+        ${!cleared && !ended ? `<div class="mt-3 rounded-xl border border-blue-400/20 bg-blue-950/30 p-2.5"><div class="mb-2 flex items-center justify-between text-[10px]"><b class="text-blue-200">💧 협동 전투 MP</b><span class="font-black tabular-nums text-blue-100">${nf(coopSkillMp)} / ${nf(coopSkillMaxMp)}</span></div><div class="mb-3 h-2 overflow-hidden rounded-full bg-slate-900"><div class="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-300" style="width:${Math.max(0,Math.min(100,coopSkillMp/coopSkillMaxMp*100))}%"></div></div><div class="grid grid-cols-2 gap-2"><button onclick="AXO.coopAttack('NORMAL')" class="rounded-xl border border-rose-300/30 bg-gradient-to-b from-rose-600 to-rose-800 px-2 py-3 text-xs font-black text-white shadow-lg">⚔️ 일반 공격</button><button onclick="AXO.coopAttack('ALL')" class="rounded-xl border border-amber-300/30 bg-gradient-to-b from-amber-500 to-orange-700 px-2 py-3 text-xs font-black text-white shadow-lg">💥 약점 공격</button></div><div class="mt-3 border-t border-white/10 pt-2"><div class="mb-2 text-[10px] font-black text-violet-200">✨ 장착 액티브 스킬</div><div class="grid grid-cols-2 gap-2">${(Array.isArray(state.equippedSkills) ? state.equippedSkills : []).map(sId => { const sk = SKILLS_DB.find(x => x.id === sId); const info = state.skills && state.skills[sId]; if (!sk || !info || !info.unlocked) return ''; const readyAt = Number(coopSkillCooldowns[sId] || 0); const remain = Math.max(0, Math.ceil((readyAt - Date.now()) / 1000)); const canUse = coopSkillMp >= sk.mp && remain <= 0; return `<button onclick="AXO.coopSkill('${sk.id}')" ${canUse ? '' : 'disabled'} class="rounded-xl border border-violet-300/30 bg-gradient-to-b from-violet-700 to-indigo-900 px-2 py-2.5 text-left text-[10px] font-black text-white shadow-lg disabled:opacity-40"><span class="text-base">${sk.icon}</span> ${esc(sk.name)}<div class="mt-1 flex justify-between text-[9px] text-violet-100/80"><span>MP ${sk.mp}</span><span>${remain > 0 ? remain + '초' : '사용 가능'}</span></div><div class="mt-0.5 text-[9px] text-amber-200">${Math.round(sk.mult*100)}% 피해 · Lv.${Number(info.level)||1}</div></button>`; }).join('') || '<div class="col-span-2 rounded-lg bg-slate-950/60 p-2 text-center text-[10px] text-slate-400">장착하고 해금한 스킬이 없어요. 전투 메뉴에서 스킬을 해금하고 장착해 주세요.</div>'}</div></div></div>` : ''}
         ${cleared ? `<button onclick="AXO.coopClaim()" class="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 px-3 py-3 text-sm font-black text-white">🎁 협동 레이드 보상 받기</button>` : ''}
       </div>
       <div class="border-t border-white/10 bg-black/20 px-4 py-3"><div class="mb-1 text-[11px] font-black text-amber-200">🏆 파티 피해량 순위</div>${rankHtml}</div>
@@ -3822,8 +3826,32 @@ AXO.coopStart = async function () {
 };
 AXO.coopAttack = async function (type) {
   if (coopBusy || !coopRaidId) return; coopBusy = true;
-  try { await syncCloud(false); const result = await coopRpc('coop_attack_boss', { p_raid: coopRaidId, p_type: type }); if (result && result.damage != null) showToast(`${nf(result.damage)} 피해!${result.critical ? ' 치명타!' : ''}`); await coopLoad(); }
+  try { await syncCloud(false); const result = await coopRpc('coop_attack_boss', { p_raid: coopRaidId, p_type: type }); if (result && result.current_mp != null) coopSkillMp = Number(result.current_mp); if (result && result.damage != null) showToast(`${nf(result.damage)} 피해!${result.critical ? ' 치명타!' : ''}`); await coopLoad(); }
   catch (e) { coopError(e); } finally { coopBusy = false; }
+};
+AXO.coopSkill = async function (skillId) {
+  const sk = SKILLS_DB.find(x => x.id === skillId);
+  const info = state.skills && state.skills[skillId];
+  if (!sk || !info || !info.unlocked || !(state.equippedSkills || []).includes(skillId)) return showToast('해금하고 장착한 스킬만 사용할 수 있어요.');
+  if (coopBusy || !coopRaidId) return;
+  const remain = Math.ceil((Number(coopSkillCooldowns[skillId] || 0) - Date.now()) / 1000);
+  if (remain > 0) return showToast(`⏳ ${sk.name} 재사용까지 ${remain}초 남았어요.`);
+  if (coopSkillMp < sk.mp) return showToast(`💧 MP가 부족해요. ${sk.mp} MP가 필요합니다.`);
+  coopBusy = true;
+  try {
+    await syncCloud(false);
+    // SQL 함수는 p_type 값이 SKILL:<스킬ID>인 요청을 스킬 공격으로 처리해야 합니다.
+    const result = await coopRpc('coop_attack_boss', { p_raid: coopRaidId, p_type: 'SKILL:' + skillId });
+    if (result && result.current_mp != null) coopSkillMp = Number(result.current_mp);
+    else coopSkillMp = Math.max(0, coopSkillMp - sk.mp);
+    if (result && result.cooldown_seconds != null) coopSkillCooldowns[skillId] = Date.now() + Number(result.cooldown_seconds) * 1000;
+    else coopSkillCooldowns[skillId] = Date.now() + sk.cd * 1000;
+    const actual = Number(result && result.damage) || 0;
+    showToast(`${sk.icon} ${sk.name}! ${nf(actual)} 피해${result && result.critical ? ' · 치명타!' : ''}`);
+    if (result && result.heal) showToast(`💚 체력 ${nf(result.heal)} 회복!`);
+    await coopLoad();
+  } catch (e) { coopError(e); }
+  finally { coopBusy = false; }
 };
 AXO.coopClaim = async function () {
   if (coopBusy || !coopRaidId) return; coopBusy = true;
