@@ -1060,10 +1060,10 @@ function draw(){if(!on())return;const c=$('content');
  c.innerHTML=`<h2 class="sectiontitle">🐾 펫 소환</h2><div class="card"><div class="row"><button class="primary grow" data-pa="coins" data-n="1">코인 1회 · 4,000🪙</button><button class="primary grow" data-pa="coins" data-n="10">코인 10연 · 38,000🪙</button></div><div class="row"><button class="primary grow" data-pa="gems" data-n="1">보석 1회 · 40💎</button><button class="primary grow" data-pa="gems" data-n="10">보석 10연 · 380💎</button></div>
  <div class="tiny">천장 ${pity}/50 (50번째 소환은 영웅 이상 확정) · 중복 펫은 등급별 코인으로 변환</div>
  <div class="tiny">확률: ${G.map((g,i)=>`<span style="color:${GC[i]}">${g} ${GP[i]}%</span>`).join(' · ')}</div></div>
- <h3>도감 (${S.pets.length}/${all.length})</h3><div class="grid">${all.sort((a,b)=>PG[b]-PG[a]).map(id=>{const p=petCatalog[id],o=S.pets.includes(id);return `<div class="tile" style="border:2px solid ${GC[PG[id]]};${o?'':'opacity:.5'}"><div class="pet-emoji" style="font-size:38px;padding:6px">${p.icon}</div><b style="color:${GC[PG[id]]}">${p.name}</b><small>[${G[PG[id]]}] 생산량 +${Math.round(p.bonus*100)}%</small><div class="tiny">✨ ${(window.__PAT||{})[id]||''}</div><div class="tiny">${o?'보유 중':'미발견'}</div></div>`}).join('')}</div>`}
+ <h3>도감 (${S.pets.length}/${all.length})</h3>${[6,5,4,3,2,1,0].map(g=>{const ids=all.filter(id=>PG[id]===g);if(!ids.length)return '';const own=ids.filter(id=>S.pets.includes(id)).length;return `<h4 style="color:${GC[g]};margin:14px 0 6px">${G[g]} 등급 · ${own}/${ids.length} · 소환 확률 ${GP[g]}%</h4><div class="grid">${ids.map(id=>{const p=petCatalog[id],o=S.pets.includes(id);return `<div class="tile" style="border:2px solid ${GC[g]};${o?'':'opacity:.5'}"><div class="pet-emoji" style="font-size:38px;padding:6px">${p.icon}</div><b style="color:${GC[g]}">${p.name}</b><small>생산량 +${Math.round(p.bonus*100)}%</small><div class="tiny">✨ ${(window.__PAT||{})[id]||''}</div><div class="tiny">${o?'보유 중':'미발견'}</div></div>`}).join('')}</div>`}).join('')}`}
 function show(res){const best=Math.max(...res.map(r=>r.g)),o=document.createElement('div');
  o.style.cssText='position:fixed;inset:0;z-index:50;background:#000c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;overflow:auto';
- o.innerHTML=`<style>@keyframes ppop{from{transform:scale(.3);opacity:0}}</style><h2 style="color:${GC[best]};text-shadow:0 0 20px ${GC[best]}">${best>=3?'✨ '+G[best]+' 펫 등장! ✨':'소환 결과'}</h2><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">${res.map((r,i)=>`<div style="width:104px;padding:9px;border-radius:14px;background:#171a36;border:2px solid ${GC[r.g]};box-shadow:0 0 ${r.g*5}px ${GC[r.g]};text-align:center;animation:ppop .35s ${i*.08}s both"><div style="font-size:34px">${petCatalog[r.id].icon}</div><b style="color:${GC[r.g]};font-size:12px">${G[r.g]}</b><div style="font-size:13px">${petCatalog[r.id].name}</div><small>${r.dup?'중복 → +'+r.coin.toLocaleString()+'🪙':'NEW!'}</small></div>`).join('')}</div><button class="primary" style="max-width:240px">확인</button>`;
+ o.innerHTML=`<style>@keyframes ppop{from{transform:scale(.3);opacity:0}}</style><h2 style="color:${GC[best]};text-shadow:0 0 20px ${GC[best]}">${best>=3?'✨ '+G[best]+' 펫 등장! ✨':'소환 결과'}</h2><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">${res.map((r,i)=>`<div style="width:104px;padding:9px;border-radius:14px;background:#171a36;border:2px solid ${GC[r.g]};box-shadow:0 0 ${r.g*5}px ${GC[r.g]};text-align:center;animation:ppop .35s ${i*.08}s both"><div style="font-size:34px">${petCatalog[r.id].icon}</div><b style="color:${GC[r.g]};font-size:12px">${G[r.g]}</b><div style="font-size:13px">${petCatalog[r.id].name}</div><div style="font-size:10px;color:#b6b8d4;line-height:1.3">${(window.__PAT||{})[r.id]||''}</div><small>${r.dup?'중복 → +'+r.coin.toLocaleString()+'🪙':'NEW!'}</small></div>`).join('')}</div><button class="primary" style="max-width:240px">확인</button>`;
  o.onclick=e=>{if(e.target.tagName==='BUTTON'||e.target===o)o.remove()};document.body.appendChild(o)}
 async function pull(cur,n){if(busy)return;busy=true;
  try{await sb.from('player_stats').update({coins:Math.floor(S.coins),gems:Math.floor(S.gems)}).eq('user_id',currentUser.id);
@@ -1076,7 +1076,7 @@ async function pull(cur,n){if(busy)return;busy=true;
    res.push({id,g:gg,dup,coin:DUP[gg]})}
   S.totalEggs=(S.totalEggs||0)+n;save();try{render()}catch(e){}show(res)
  }catch(e){toast('실패: '+String(e.message||e).replace(/not enough (coins|gems)/,'재화가 부족해요'))}
- finally{busy=false;draw()}}
+ finally{busy=false;draw();if(document.querySelector('#nav [data-tab="pets"].active'))window.tab('pets')}}window.__petPull=pull;
 const _t=window.tab;
 window.tab=async function(t){if(t!=='petgacha')return _t(t);
  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='petgacha'));
@@ -1157,7 +1157,7 @@ abyss|-|-|6|c,k,p|심연의 계약
 celestial|-|-|6|p,c,k,r|별고래의 노래`.split('\n');
 const PG=window.__PG=window.__PG||{},PAB=window.__PAB={},PAT=window.__PAT={};
 LIST.forEach((ln,idx)=>{const [id,name,icon,g,ty,title]=ln.split('|'),gi=+g,h=[...id].reduce((a,c)=>a+c.charCodeAt(0),0)%5;
- if(name!=='-'&&!petCatalog[id])petCatalog[id]={name,icon,bonus:+(BON[gi]*(1+h*.04)).toFixed(2),price:0};
+ if(name!=='-'&&!petCatalog[id])petCatalog[id]={name,icon,bonus:+(BON[gi]*(1+h*.04)).toFixed(2),price:0};if(petCatalog[id])petCatalog[id].bonus=+(BON[gi]*(1+h*.04)).toFixed(2);
  PG[id]=gi;const effs=ty.split(',').map((t,i)=>[t,+(BASE[t][gi]*(i?0.6:1)*(0.9+h*.05)).toFixed(1)]);
  PAB[id]=effs;PAT[id]=title+': '+effs.map(([t,v])=>T[t][0]+' +'+v+'%').join(' · ')});
 const sum=t=>((PAB[S.equippedPet]||[]).filter(x=>x[0]===t).reduce((a,x)=>a+x[1],0));
@@ -1165,7 +1165,7 @@ const _r=window.rate;if(typeof _r==='function')window.rate=()=>_r()*(1+sum('p')/
 const _c=window.clickPower;if(typeof _c==='function')window.clickPower=()=>{let v=_c()*(1+sum('k')/100);if(Math.random()*100<sum('r'))v*=3;return Math.max(1,Math.floor(v))};
 const _e=window.earnCoins;if(typeof _e==='function')window.earnCoins=n=>_e(n*(1+sum('c')/100));
 /* 대표 펫 능력 표시 */
-const _t=window.tab;window.tab=function(t){const r=_t(t);if(t==='pets'){const c=$('content'),a=PAT[S.equippedPet];if(c&&a&&!c.querySelector('#petAb'))c.insertAdjacentHTML('afterbegin',`<div id="petAb" class="notice">🐾 대표 펫 능력 — ${petCatalog[S.equippedPet].name}: ${a}</div>`)}return r};
+const _t=window.tab;window.tab=function(t){const r=_t(t);if(t==='pets'){const GN=['일반','고급','희귀','영웅','전설','신화','초월'],GK=['#9aa0b5','#5fd47a','#4aa8ff','#b36bff','#ffb43a','#ff5470','#7ff3ff'];const c0=$('content');if(c0){const eb=c0.querySelector('[data-buy-egg]');if(eb&&!c0.querySelector('[data-egg10]')){eb.textContent='펫 소환 1회 · 4,000 🪙';eb.insertAdjacentHTML('afterend','<button class="primary" data-egg10>펫 소환 10연 · 38,000 🪙</button>')}const tl=[...c0.querySelectorAll('.tile')].filter(x=>x.querySelector('[data-equip-pet]'));if(tl.length){const par=tl[0].parentNode,idOf=x=>x.querySelector('[data-equip-pet]').dataset.equipPet;tl.sort((a,b)=>(PG[idOf(b)]||0)-(PG[idOf(a)]||0)||(petCatalog[idOf(b)].bonus-petCatalog[idOf(a)].bonus)).forEach(x=>{const g=PG[idOf(x)]||0;x.style.border='2px solid '+GK[g];const bb=x.querySelector('b');if(bb&&!bb.dataset.g){bb.dataset.g='1';bb.innerHTML='<span style="color:'+GK[g]+'">['+GN[g]+']</span> '+bb.innerHTML}par.appendChild(x)})}}const c=$('content'),a=PAT[S.equippedPet];if(c&&a&&!c.querySelector('#petAb'))c.insertAdjacentHTML('afterbegin',`<div id="petAb" class="notice">🐾 대표 펫 능력 — ${petCatalog[S.equippedPet].name}: ${a}</div>`)}return r};
 /* ===== 스킨 소환 결과 연출 (기존 소환 로직은 그대로, 결과 화면만 오버레이) ===== */
 const RN=['일반','고급','희귀','영웅','전설','신화','초월'],RC=['#9aa0b5','#5fd47a','#4aa8ff','#b36bff','#ffb43a','#ff5470','#7ff3ff'];
 new MutationObserver(()=>{const box=document.getElementById('gachaResult');if(!box||!box.querySelector('.tile'))return;
@@ -1177,6 +1177,9 @@ new MutationObserver(()=>{const box=document.getElementById('gachaResult');if(!b
  o.onclick=e=>{if(e.target.tagName==='BUTTON'||e.target===o)o.remove()};document.body.appendChild(o)}).observe(document.body,{childList:true,subtree:true});
 })();
 
+document.addEventListener('click',e=>{const b=e.target.closest('[data-buy-egg],[data-egg10]');if(!b)return;e.stopImmediatePropagation();e.preventDefault();
+ if(!currentUser){toast('로그인 후 이용할 수 있어요');return}
+ if(typeof window.__petPull==='function')window.__petPull('coins',b.hasAttribute('data-egg10')?10:1)},true);
 </script>
 </body></html>
 <style id="chibi-art-upgrade">
