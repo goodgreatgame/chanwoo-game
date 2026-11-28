@@ -914,17 +914,18 @@ const sfx = new RetroSoundEngine();
 
 /**
  * ============================================================================
- * 4. 기타 게임 데이터 정의 (스킬 7종, 장비, 펫, 던전/보스, 테마, 13탭)
+ * 4. 기타 게임 데이터 정의 (스킬 47종, 장비, 펫, 던전/보스, 테마, 13탭)
  * ============================================================================
  */
 const SKILLS_DB = [
-  { id: 'meteor', name: '유성검격', icon: '☄️', mp: 20, cd: 4, mult: 3.2, color: '#f97316', desc: '하늘에서 유성의 검기를 소환해 단일 대상에게 320% 화염 물리 피해를 입힙니다.' },
-  { id: 'thunder', name: '뇌전폭풍', icon: '⚡', mp: 25, cd: 5, mult: 3.8, color: '#38bdf8', desc: '초고압 번개 폭풍을 일으켜 380% 전격 피해와 함께 적을 경직시킵니다.' },
-  { id: 'frost', name: '절대영도 결계', icon: '❄️', mp: 30, cd: 6, mult: 4.1, color: '#22d3ee', desc: '빙결의 성역을 펼쳐 410% 냉기 피해를 주고 자신의 체력을 15% 회복합니다.', heal: 0.15 },
-  { id: 'dragon', name: '드래곤 브레스', icon: '🔥', mp: 35, cd: 7, mult: 4.8, color: '#ef4444', desc: '고대 용의 숨결을 방출하여 480%의 치명적인 업화 피해를 입힙니다.' },
-  { id: 'constellation', name: '성좌의 심판', icon: '🌟', mp: 45, cd: 8, mult: 5.8, color: '#f472b6', desc: '밤하늘의 별빛 창을 쏟아부어 580%의 신성 성좌 피해를 가합니다.' },
-  { id: 'dimension', name: '차원 절단', icon: '🌀', mp: 55, cd: 10, mult: 7.2, color: '#a855f7', desc: '시공간 자체를 베어내어 방어력을 무시하는 720% 차원 피해를 입힙니다.' },
-  { id: 'supernova', name: '초신성 폭발', icon: '💥', mp: 70, cd: 12, mult: 9.5, color: '#fde047', desc: '응축된 항성의 에너지를 폭발시켜 950%의 궁극 피해를 선사합니다.' }
+  // coopGrade/coopGradeMult는 협동 레이드 서버 피해 계산용이며, 기존 솔로 전투 mult는 유지합니다.
+  { id: 'meteor', name: '유성검격', grade: '일반', coopGradeMult: 2, icon: '☄️', mp: 20, cd: 4, mult: 3.2, color: '#f97316', desc: '하늘에서 유성의 검기를 소환해 단일 대상에게 320% 화염 물리 피해를 입힙니다.' },
+  { id: 'thunder', name: '뇌전폭풍', grade: '고급', coopGradeMult: 3, icon: '⚡', mp: 25, cd: 5, mult: 3.8, color: '#38bdf8', desc: '초고압 번개 폭풍을 일으켜 380% 전격 피해와 함께 적을 경직시킵니다.' },
+  { id: 'frost', name: '절대영도 결계', grade: '희귀', coopGradeMult: 5, icon: '❄️', mp: 30, cd: 6, mult: 4.1, color: '#22d3ee', desc: '빙결의 성역을 펼쳐 410% 냉기 피해를 주고 자신의 체력을 15% 회복합니다.', heal: 0.15 },
+  { id: 'dragon', name: '드래곤 브레스', grade: '영웅', coopGradeMult: 8, icon: '🔥', mp: 35, cd: 7, mult: 4.8, color: '#ef4444', desc: '고대 용의 숨결을 방출하여 480%의 치명적인 업화 피해를 입힙니다.' },
+  { id: 'constellation', name: '성좌의 심판', grade: '전설', coopGradeMult: 13, icon: '🌟', mp: 45, cd: 8, mult: 5.8, color: '#f472b6', desc: '밤하늘의 별빛 창을 쏟아부어 580%의 신성 성좌 피해를 가합니다.' },
+  { id: 'dimension', name: '차원 절단', grade: '신화', coopGradeMult: 20, icon: '🌀', mp: 55, cd: 10, mult: 7.2, color: '#a855f7', desc: '시공간 자체를 베어내어 방어력을 무시하는 720% 차원 피해를 입힙니다.' },
+  { id: 'supernova', name: '초신성 폭발', grade: '초월', coopGradeMult: 32, icon: '💥', mp: 70, cd: 12, mult: 9.5, color: '#fde047', desc: '응축된 항성의 에너지를 폭발시켜 950%의 궁극 피해를 선사합니다.' }
 ];
 
 const WEAPONS_DB = [
@@ -965,8 +966,18 @@ const PETS_DB = [
   ['정종훈의 종횡무진 훈련소','🏋️','종횡무진 훈련으로 단련된 연타!'],['김민경의 민경 마라 폭풍','🌶️','마라탕 불바다가 몰아친다!'],['이상미의 상상초월 미소','✨','상상 이상의 눈부심!'],['김길환의 환상의 길막기','🚧','환상적인 길막기로 적을 가둔다!'],['백승남의 남극 백곰 박치기','🐻','시원~한 박치기!'],['노승룡의 승리의 룡 폭격','🐲','용의 포효로 전장을 뒤흔든다!'],['엄보용의 보용 보양식 대잔치','🍲','든든한 보양식으로 체력 대회복!',.25],['김영옥의 영옥 영롱 폭죽','🎆','밤하늘을 수놓는 대폭죽!'],['이순갑의 순갑 순삭 콤보','⚡','눈 깜짝할 새 순삭!'],['허미정의 허를 찌르는 한 방','🪄','허를 찔러 압도적인 일격!'],
   ['정종훈의 종결자 퇴근버튼','⏰','누르는 순간 끝나는 종결 스킬!'],['김민경의 민경 대마왕 불닭폭발','🌋','전설의 불닭 대폭발!'],['이상미의 상미 레전드 레몬에이드','🍹','시원새콤 회복 폭발!',.3],['김길환의 환승역 차원이동','🚇','환승 한 번에 차원을 넘는다!'],['백승남의 승남 대백과 폭풍','📚','지식의 폭풍이 몰아친다!'],['노승룡의 룡의 승천 대폭발','🌈','승룡권의 최종 진화형!'],['엄보용의 보용 용암 보온병','🌡️','마그마급 보온병 대폭발!'],['김영옥의 옥황상제 심판','⚖️','하늘의 심판이 내려온다!'],['이순갑의 순간이동 일격필살','🌀','순간이동 후 일격필살!'],['허미정의 허밍 대합창','🎤','모두의 허밍이 하나 되어 폭발!']
   ];
-  S.forEach((s,r)=>{const m=+(2+r*0.19).toFixed(2),p=r%10;
-    SKILLS_DB.push({id:'k'+r,name:s[0],icon:s[1],mp:15+Math.round(r*1.4),cd:3+Math.floor(r/4),mult:m,color:C[p],heal:s[3]||undefined,
+  // 추가 스킬 40개도 기존 순서/강도에 따라 등급과 협동 레이드 배율을 지정합니다.
+  const SKILL_GRADE_RULES = [
+    ...Array(6).fill(['일반', 2]),
+    ...Array(6).fill(['고급', 3]),
+    ...Array(6).fill(['희귀', 5]),
+    ...Array(6).fill(['영웅', 8]),
+    ...Array(6).fill(['전설', 13]),
+    ...Array(5).fill(['신화', 20]),
+    ...Array(5).fill(['초월', 32])
+  ];
+  S.forEach((s,r)=>{const m=+(2+r*0.19).toFixed(2),p=r%10,[grade,coopGradeMult]=SKILL_GRADE_RULES[r];
+    SKILLS_DB.push({id:'k'+r,name:s[0],icon:s[1],grade,coopGradeMult,mp:15+Math.round(r*1.4),cd:3+Math.floor(r/4),mult:m,color:C[p],heal:s[3]||undefined,
       desc:`${s[2]} (${Math.round(m*100)}% 피해${s[3]?` + 최대HP ${Math.round(s[3]*100)}% 회복`:''})`});});
 
   const A=(c,e,x,s)=>({c,e,x,s});
@@ -3915,7 +3926,7 @@ function coopRender() {
         <div class="min-w-0 text-center"><div class="mb-2 truncate text-[10px] font-black text-rose-200">BOSS</div><div class="mx-auto grid aspect-square w-full max-w-32 place-items-center rounded-2xl border border-rose-300/30 text-5xl shadow-xl sm:text-6xl" style="background:radial-gradient(circle at 35% 25%,#8b5cf6,#31205f 55%,#160e31);box-shadow:0 0 28px rgba(168,85,247,.25)">${bossEmoji}</div><div class="mt-2 truncate text-[11px] font-black text-rose-200">${esc(coopRaid.boss_name || '협동 보스')}</div><div class="mt-1 text-[10px] font-black tabular-nums text-rose-300">${nf(hp)} / ${nf(maxHp)}</div><div class="mt-1.5 h-2.5 overflow-hidden rounded-full border border-white/10 bg-slate-900"><div class="h-full rounded-full bg-gradient-to-r from-rose-700 via-red-500 to-orange-400 transition-all" style="width:${pct}%"></div></div><div class="mt-1 text-[9px] text-slate-400">보스 체력 ${pct.toFixed(1)}%</div></div>
       </div>
       <div class="mx-3 mb-3 rounded-xl border border-white/10 bg-black/25 p-3 sm:mx-5"><div class="flex items-center justify-between text-[10px]"><span class="font-bold text-slate-300">⏱ 남은 전투 시간</span><b class="tabular-nums text-amber-300">${coopRaid.seconds_left == null ? '정보 없음' : nf(coopRaid.seconds_left) + '초'}</b></div>
-        ${!cleared && !ended ? `<div class="mt-3 rounded-xl border border-blue-400/20 bg-blue-950/30 p-2.5"><div class="mb-2 flex items-center justify-between text-[10px]"><b class="text-blue-200">💧 협동 전투 MP</b><span class="font-black tabular-nums text-blue-100">${nf(coopSkillMp)} / ${nf(coopSkillMaxMp)}</span></div><div class="mb-3 h-2 overflow-hidden rounded-full bg-slate-900"><div class="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-300" style="width:${Math.max(0,Math.min(100,coopSkillMp/coopSkillMaxMp*100))}%"></div></div><div class="grid grid-cols-2 gap-2"><button onclick="AXO.coopAttack('NORMAL')" class="rounded-xl border border-rose-300/30 bg-gradient-to-b from-rose-600 to-rose-800 px-2 py-3 text-xs font-black text-white shadow-lg">⚔️ 일반 공격</button><button onclick="AXO.coopAttack('ALL')" class="rounded-xl border border-amber-300/30 bg-gradient-to-b from-amber-500 to-orange-700 px-2 py-3 text-xs font-black text-white shadow-lg">💥 약점 공격</button></div><div class="mt-3 border-t border-white/10 pt-2"><div class="mb-2 text-[10px] font-black text-violet-200">✨ 장착 액티브 스킬</div><div class="grid grid-cols-2 gap-2">${(Array.isArray(state.equippedSkills) ? state.equippedSkills : []).map(sId => { const sk = SKILLS_DB.find(x => x.id === sId); const info = state.skills && state.skills[sId]; if (!sk || !info || !info.unlocked) return ''; const readyAt = Number(coopSkillCooldowns[sId] || 0); const remain = Math.max(0, Math.ceil((readyAt - Date.now()) / 1000)); const canUse = coopSkillMp >= sk.mp && remain <= 0; return `<button onclick="AXO.coopSkill('${sk.id}')" ${canUse ? '' : 'disabled'} class="rounded-xl border border-violet-300/30 bg-gradient-to-b from-violet-700 to-indigo-900 px-2 py-2.5 text-left text-[10px] font-black text-white shadow-lg disabled:opacity-40"><span class="text-base">${sk.icon}</span> ${esc(sk.name)}<div class="mt-1 flex justify-between text-[9px] text-violet-100/80"><span>MP ${sk.mp}</span><span>${remain > 0 ? remain + '초' : '사용 가능'}</span></div><div class="mt-0.5 text-[9px] text-amber-200">${Math.round(sk.mult*100)}% 피해 · Lv.${Number(info.level)||1}</div></button>`; }).join('') || '<div class="col-span-2 rounded-lg bg-slate-950/60 p-2 text-center text-[10px] text-slate-400">장착하고 해금한 스킬이 없어요. 전투 메뉴에서 스킬을 해금하고 장착해 주세요.</div>'}</div></div></div>` : ''}
+        ${!cleared && !ended ? `<div class="mt-3 rounded-xl border border-blue-400/20 bg-blue-950/30 p-2.5"><div class="mb-2 flex items-center justify-between text-[10px]"><b class="text-blue-200">💧 협동 전투 MP</b><span class="font-black tabular-nums text-blue-100">${nf(coopSkillMp)} / ${nf(coopSkillMaxMp)}</span></div><div class="mb-3 h-2 overflow-hidden rounded-full bg-slate-900"><div class="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-300" style="width:${Math.max(0,Math.min(100,coopSkillMp/coopSkillMaxMp*100))}%"></div></div><div class="grid grid-cols-2 gap-2"><button onclick="AXO.coopAttack('NORMAL')" class="rounded-xl border border-rose-300/30 bg-gradient-to-b from-rose-600 to-rose-800 px-2 py-3 text-xs font-black text-white shadow-lg">⚔️ 일반 공격</button><button onclick="AXO.coopAttack('ALL')" class="rounded-xl border border-amber-300/30 bg-gradient-to-b from-amber-500 to-orange-700 px-2 py-3 text-xs font-black text-white shadow-lg">💥 약점 공격</button></div><div class="mt-3 border-t border-white/10 pt-2"><div class="mb-2 text-[10px] font-black text-violet-200">✨ 장착 액티브 스킬</div><div class="grid grid-cols-2 gap-2">${(Array.isArray(state.equippedSkills) ? state.equippedSkills : []).map(sId => { const sk = SKILLS_DB.find(x => x.id === sId); const info = state.skills && state.skills[sId]; if (!sk || !info || !info.unlocked) return ''; const readyAt = Number(coopSkillCooldowns[sId] || 0); const remain = Math.max(0, Math.ceil((readyAt - Date.now()) / 1000)); const canUse = coopSkillMp >= sk.mp && remain <= 0; return `<button onclick="AXO.coopSkill('${sk.id}')" ${canUse ? '' : 'disabled'} class="rounded-xl border border-violet-300/30 bg-gradient-to-b from-violet-700 to-indigo-900 px-2 py-2.5 text-left text-[10px] font-black text-white shadow-lg disabled:opacity-40"><span class="text-base">${sk.icon}</span> ${esc(sk.name)}<div class="mt-1 flex justify-between text-[9px] text-violet-100/80"><span>MP ${sk.mp}</span><span>${remain > 0 ? remain + '초' : '사용 가능'}</span></div><div class="mt-0.5 text-[9px] text-amber-200">${esc(sk.grade || '일반')} · 레이드 ${Math.round(sk.mult * (sk.coopGradeMult || 1) * 100)}% · Lv.${Number(info.level)||1}</div></button>`; }).join('') || '<div class="col-span-2 rounded-lg bg-slate-950/60 p-2 text-center text-[10px] text-slate-400">장착하고 해금한 스킬이 없어요. 전투 메뉴에서 스킬을 해금하고 장착해 주세요.</div>'}</div></div></div>` : ''}
         ${cleared ? `<button onclick="AXO.coopClaim()" class="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 px-3 py-3 text-sm font-black text-white">🎁 협동 레이드 보상 받기</button>` : ''}
       </div>
       <div class="border-t border-white/10 bg-black/20 px-4 py-3"><div class="mb-1 text-[11px] font-black text-amber-200">🏆 파티 피해량 순위</div>${rankHtml}</div>
@@ -3959,6 +3970,19 @@ AXO.coopAttack = async function (type) {
   try { await syncCloud(false); const result = await coopRpc('coop_attack_boss', { p_raid: coopRaidId, p_type: type }); if (result && result.current_mp != null) coopSkillMp = Number(result.current_mp); if (result && result.damage != null) showToast(`${nf(result.damage)} 피해!${result.critical ? ' 치명타!' : ''}`); await coopLoad(); }
   catch (e) { coopError(e); } finally { coopBusy = false; }
 };
+function coopShowSkillImpact(skill, damage) {
+  const target = document.querySelector('#tabContent .text-rose-200');
+  const arena = target && target.closest('section');
+  const host = arena || document.getElementById('tabContent');
+  if (!host) return;
+  const fx = document.createElement('div');
+  fx.textContent = `${skill.icon} ${skill.name} · ${nf(damage)} 피해`;
+  fx.setAttribute('aria-live', 'polite');
+  fx.style.cssText = `position:relative;z-index:5;margin:8px auto;padding:14px 10px;max-width:92%;text-align:center;border:2px solid ${skill.color};border-radius:16px;background:linear-gradient(120deg,rgba(15,23,42,.96),rgba(49,26,85,.96));color:${skill.color};font-weight:900;font-size:16px;text-shadow:0 0 12px ${skill.color};box-shadow:0 0 24px ${skill.color};animation:axPvpImpact .8s ease-out both;`;
+  host.prepend(fx);
+  setTimeout(() => fx.remove(), 850);
+}
+
 AXO.coopSkill = async function (skillId) {
   const sk = SKILLS_DB.find(x => x.id === skillId);
   const info = state.skills && state.skills[skillId];
@@ -3977,7 +4001,8 @@ AXO.coopSkill = async function (skillId) {
     if (result && result.cooldown_seconds != null) coopSkillCooldowns[skillId] = Date.now() + Number(result.cooldown_seconds) * 1000;
     else coopSkillCooldowns[skillId] = Date.now() + sk.cd * 1000;
     const actual = Number(result && result.damage) || 0;
-    showToast(`${sk.icon} ${sk.name}! ${nf(actual)} 피해${result && result.critical ? ' · 치명타!' : ''}`);
+    showToast(`${sk.icon} ${sk.name} [${sk.grade}]! ${nf(actual)} 피해${result && result.critical ? ' · 치명타!' : ''}`);
+    if (actual > 0) coopShowSkillImpact(sk, actual);
     if (result && result.heal) showToast(`💚 체력 ${nf(result.heal)} 회복!`);
     await coopLoad();
   } catch (e) { coopError(e); }
