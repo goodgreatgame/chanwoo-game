@@ -135,7 +135,23 @@
     box-shadow: 0 0 22px rgba(244,114,182,0.85), 0 0 10px rgba(253,224,71,0.7);
   }
 </style>
-<style>@keyframes axPvpImpact{0%{transform:scale(.25) rotate(-8deg);opacity:0;filter:blur(8px)}45%{transform:scale(1.12);opacity:1;filter:blur(0);box-shadow:0 0 32px currentColor}100%{transform:scale(1);opacity:0;filter:blur(2px)}}</style></head>
+<style>@keyframes axPvpImpact{0%{transform:scale(.25) rotate(-8deg);opacity:0;filter:blur(8px)}45%{transform:scale(1.12);opacity:1;filter:blur(0);box-shadow:0 0 32px currentColor}100%{transform:scale(1);opacity:0;filter:blur(2px)}}</style><style>
+.sgi{position:relative;display:inline-block;flex-shrink:0;vertical-align:middle;filter:drop-shadow(0 0 4px var(--sgi-glow))}
+.sgi-ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;line-height:1}
+.sgi-g3{animation:sgiPulse 2.2s ease-in-out infinite}
+.sgi-g4{animation:sgiPulse 1.8s ease-in-out infinite}
+.sgi-g5{animation:sgiPulse 1.4s ease-in-out infinite}
+.sgi-g6{animation:sgiPulse 1.2s ease-in-out infinite,sgiHue 4s linear infinite}
+@keyframes sgiPulse{0%,100%{filter:drop-shadow(0 0 3px var(--sgi-glow))}50%{filter:drop-shadow(0 0 11px var(--sgi-glow))}}
+@keyframes sgiHue{to{filter:hue-rotate(360deg) drop-shadow(0 0 10px var(--sgi-glow))}}
+.sgi-badge{display:inline-block;font-size:9px;font-weight:900;padding:0 5px;border:1px solid;border-radius:999px;background:rgba(2,6,23,.7);letter-spacing:.3px;text-shadow:0 0 6px var(--sgi-glow)}
+.sgi-b6{background:linear-gradient(90deg,#7c3aed55,#db277755,#f59e0b55)}
+.sk-cutin{position:absolute;left:0;right:0;top:34%;z-index:60;display:flex;align-items:center;gap:10px;padding:8px 16px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--sk-c) 12%,rgba(2,6,23,.92) 40%,rgba(2,6,23,.92) 60%,var(--sk-c) 88%,transparent);box-shadow:0 0 22px var(--sk-g);animation:skCut 1.05s ease-out both}
+.sk-cutin-g{font-size:10px;font-weight:900;color:var(--sk-g)}
+.sk-cutin-n{font-size:17px;font-weight:900;color:#fff;text-shadow:0 0 10px var(--sk-c)}
+@keyframes skCut{0%{transform:translateX(-100%);opacity:0}18%{transform:translateX(0);opacity:1}80%{transform:translateX(0);opacity:1}100%{transform:translateX(100%);opacity:0}}
+</style>
+</head>
 <body class="flex flex-col items-center justify-start pb-6">
 
 <!-- 메인 앱 컨테이너 -->
@@ -1077,6 +1093,294 @@ const TABS = [
  * 5. 게임 상태(State) 관리 및 로컬 스토리지 저장/오프라인 보상
  * ============================================================================
  */
+/* ===== 스킬 47종: 등급 이미지 + 스킬별 임팩트 (GRADE IMAGE & SKILL IMPACT) ===== */
+const SKILL_GRADES = ['일반', '고급', '희귀', '영웅', '전설', '신화', '초월'];
+const SKILL_GRADE_THEME = {
+  '일반': { c1: '#cbd5e1', c2: '#475569', glow: '#94a3b8', shape: 'circle' },
+  '고급': { c1: '#86efac', c2: '#166534', glow: '#4ade80', shape: 'hex' },
+  '희귀': { c1: '#7dd3fc', c2: '#1e3a8a', glow: '#38bdf8', shape: 'diamond' },
+  '영웅': { c1: '#e9d5ff', c2: '#581c87', glow: '#c084fc', shape: 'shield' },
+  '전설': { c1: '#fde68a', c2: '#92400e', glow: '#fbbf24', shape: 'sun' },
+  '신화': { c1: '#fecdd3', c2: '#9f1239', glow: '#fb7185', shape: 'crown' },
+  '초월': { c1: '#ffffff', c2: '#6d28d9', glow: '#f0abfc', shape: 'cosmic' }
+};
+function skillGradeIdx(sk) { const i = SKILL_GRADES.indexOf(sk && sk.grade); return i < 0 ? 0 : i; }
+
+/* --- 등급 이미지 (SVG 엠블럼 + 스킬 아이콘) --- */
+let _sgiUid = 0;
+function _starPts(n, r1, r2, cx = 32, cy = 32, rot = -Math.PI / 2) {
+  let s = '';
+  for (let i = 0; i < n * 2; i++) {
+    const r = i % 2 === 0 ? r1 : r2, a = rot + i * Math.PI / n;
+    s += `${(cx + Math.cos(a) * r).toFixed(1)},${(cy + Math.sin(a) * r).toFixed(1)} `;
+  }
+  return s.trim();
+}
+function skillGradeImg(sk, size = 48) {
+  const gi = skillGradeIdx(sk), th = SKILL_GRADE_THEME[SKILL_GRADES[gi]], id = 'sgi' + (++_sgiUid);
+  const fill = `url(#${id}f)`, stroke = th.c1;
+  let shape = '', deco = '';
+  switch (th.shape) {
+    case 'circle': shape = `<circle cx="32" cy="32" r="27" fill="${fill}" stroke="${stroke}" stroke-width="3"/>`; break;
+    case 'hex': shape = `<polygon points="32,4 56,18 56,46 32,60 8,46 8,18" fill="${fill}" stroke="${stroke}" stroke-width="3"/>`;
+      deco = `<polygon points="32,10 51,21 51,43 32,54 13,43 13,21" fill="none" stroke="${th.glow}" stroke-width="1" opacity=".7"/>`; break;
+    case 'diamond': shape = `<polygon points="32,2 61,32 32,62 3,32" fill="${fill}" stroke="${stroke}" stroke-width="3"/>`;
+      deco = `<polygon points="32,9 54,32 32,55 10,32" fill="none" stroke="${th.glow}" stroke-width="1" opacity=".7"/><circle cx="32" cy="5" r="2.4" fill="#fff"/><circle cx="59" cy="32" r="2.4" fill="#fff"/><circle cx="5" cy="32" r="2.4" fill="#fff"/><circle cx="32" cy="59" r="2.4" fill="#fff"/>`; break;
+    case 'shield': shape = `<path d="M32 3 L57 11 V32 C57 47 45 57 32 62 C19 57 7 47 7 32 V11 Z" fill="${fill}" stroke="${stroke}" stroke-width="3"/>`;
+      deco = `<path d="M2 20 Q10 12 8 30 Q6 24 2 20Z M62 20 Q54 12 56 30 Q58 24 62 20Z" fill="${th.glow}" opacity=".85"/><path d="M32 9 L52 15 V32 C52 44 42 52 32 56 C22 52 12 44 12 32 V15 Z" fill="none" stroke="${th.glow}" stroke-width="1" opacity=".6"/>`; break;
+    case 'sun': shape = `<polygon points="${_starPts(12, 31, 24)}" fill="${fill}" stroke="${stroke}" stroke-width="2.2" stroke-linejoin="round"/><circle cx="32" cy="32" r="21" fill="rgba(0,0,0,.25)" stroke="${th.glow}" stroke-width="1.5"/>`; break;
+    case 'crown': shape = `<polygon points="${_starPts(8, 31, 19)}" fill="${fill}" stroke="${stroke}" stroke-width="2.4" stroke-linejoin="round"/><circle cx="32" cy="32" r="18" fill="rgba(0,0,0,.3)" stroke="${th.glow}" stroke-width="1.5"/>`;
+      deco = `<path d="M18 9 L22 2 L27 8 L32 0 L37 8 L42 2 L46 9 Z" fill="${th.glow}" stroke="#fff" stroke-width=".8"/>`; break;
+    case 'cosmic': shape = `<polygon points="${_starPts(16, 31, 22)}" fill="${fill}" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="32" cy="32" r="19" fill="rgba(10,0,40,.55)" stroke="url(#${id}r)" stroke-width="2.5"/>`;
+      deco = `<ellipse cx="32" cy="32" rx="30" ry="9" fill="none" stroke="url(#${id}r)" stroke-width="1.6" transform="rotate(-25 32 32)" opacity=".9"/><circle cx="8" cy="40" r="1.6" fill="#fff"/><circle cx="56" cy="22" r="1.6" fill="#fff"/><circle cx="48" cy="54" r="1.2" fill="#fff"/>`; break;
+  }
+  const svg = `<svg viewBox="0 0 64 64" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0"><defs><radialGradient id="${id}f" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="${th.c1}"/><stop offset=".55" stop-color="${th.glow}"/><stop offset="1" stop-color="${th.c2}"/></radialGradient><linearGradient id="${id}r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset=".33" stop-color="#facc15"/><stop offset=".66" stop-color="#34d399"/><stop offset="1" stop-color="#60a5fa"/></linearGradient></defs>${shape}${deco}</svg>`;
+  return `<span class="sgi sgi-g${gi}" title="${sk.grade} 등급" style="width:${size}px;height:${size}px;--sgi-glow:${th.glow}">${svg}<span class="sgi-ico" style="font-size:${Math.round(size * 0.46)}px">${sk.icon}</span></span>`;
+}
+function skillGradeBadge(sk) {
+  const gi = skillGradeIdx(sk), th = SKILL_GRADE_THEME[SKILL_GRADES[gi]];
+  return `<span class="sgi-badge sgi-b${gi}" style="--sgi-glow:${th.glow};color:${th.c1};border-color:${th.glow}">${'★'.repeat(gi + 1)} ${sk.grade}</span>`;
+}
+
+/* --- 47종 임팩트 모티프 매핑 (SKILLS_DB 순서: 기본 7 + k0~k39) --- */
+const SKILL_FX_MAP = {
+  meteor: ['meteor', '☄️'], thunder: ['bolt', '⚡'], frost: ['shatter', '❄️'], dragon: ['beam', '🔥'],
+  constellation: ['rain', '🌟'], dimension: ['rift', '🌀'], supernova: ['nova', '💥'],
+  k0: ['slash', '🏃'], k1: ['orbs', '🍛'], k2: ['burst', '🍋'], k3: ['beam', '🧭'], k4: ['rain', '🥢'],
+  k5: ['pillar', '🐉'], k6: ['bloom', '☕'], k7: ['orbs', '🔮'], k8: ['burst', '👻'], k9: ['wave', '🎵'],
+  k10: ['ring', '🔔'], k11: ['burst', '👊'], k12: ['bloom', '🥤'], k13: ['beam', '🛹'], k14: ['wave', '📯'],
+  k15: ['pillar', '🌠'], k16: ['rain', '🫖'], k17: ['burst', '🌽'], k18: ['shatter', '🛡️'], k19: ['orbs', '😊'],
+  k20: ['slash', '🏋️'], k21: ['spiral', '🌶️'], k22: ['stars', '✨'], k23: ['cross', '🚧'], k24: ['shatter', '🐻'],
+  k25: ['beam', '🐲'], k26: ['bloom', '🍲'], k27: ['stars', '🎆'], k28: ['bolt', '⚡'], k29: ['rift', '🪄'],
+  k30: ['ring', '⏰'], k31: ['nova', '🌋'], k32: ['bloom', '🍹'], k33: ['vortex', '🚇'], k34: ['spiral', '📚'],
+  k35: ['pillar', '🌈'], k36: ['meteor', '🌡️'], k37: ['cross', '⚖️'], k38: ['vortex', '🌀'], k39: ['wave', '🎤']
+};
+SKILLS_DB.forEach((s, i) => { const m = SKILL_FX_MAP[s.id] || ['burst', s.icon]; s.fx = m[0]; s.fxEmoji = m[1]; s.fxSeed = i + 1; });
+
+/* --- 임팩트 그리기 --- */
+function _rnd(seed) { const x = Math.sin(seed * 12.9898) * 43758.5453; return x - Math.floor(x); }
+function _starPath(ctx, cx, cy, r1, r2, n, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < n * 2; i++) {
+    const r = i % 2 === 0 ? r1 : r2, a = rot + i * Math.PI / n;
+    i ? ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r) : ctx.moveTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+  }
+  ctx.closePath();
+}
+function makeSkillFx(skill, x, y, W, H) {
+  const gi = skillGradeIdx(skill), pts = [];
+  let px = x + (Math.random() * 30 - 15), py = -10;
+  const steps = 7;
+  for (let i = 0; i <= steps; i++) { pts.push([px, py]); px = x + (Math.random() * 44 - 22) * (1 - i / steps); py = -10 + (y + 10) * (i + 1) / steps; }
+  return {
+    x, y, color: skill.color, kind: skill.id, progress: 0, fx: skill.fx, g: gi, seed: skill.fxSeed,
+    ang: (skill.fxSeed * 0.83) % Math.PI, c2: SKILL_GRADE_THEME[SKILL_GRADES[gi]].glow, pts,
+    speed: Math.max(0.028, 0.068 - gi * 0.006), W, H
+  };
+}
+function drawSkillFx(ctx, ef, cv) {
+  const m = ef.fx; if (!m) return false;
+  const p = ef.progress, g = ef.g, S = 1 + g * 0.2, W = cv.width, H = cv.height, x = ef.x, y = ef.y, c = ef.color, c2 = ef.c2;
+  const e = 1 - Math.pow(1 - p, 3), ox = W * 0.26, oy = H * 0.55, clamp = (v) => Math.max(0, Math.min(1, v));
+  ctx.save();
+  if (g >= 3 && p < 0.22) { ctx.globalAlpha = (0.22 - p) * (0.9 + g * 0.12); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); }
+  ctx.globalAlpha = Math.min(1, (1 - p) * 1.7);
+  ctx.strokeStyle = c; ctx.fillStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 14 + g * 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  switch (m) {
+    case 'slash': {
+      const hits = 2 + (ef.seed % 3) + (g > 3 ? 1 : 0);
+      for (let i = 0; i < hits; i++) {
+        const t = clamp((p - i * 0.11) / 0.5); if (t <= 0) continue;
+        const a = ef.ang + i * 0.9 - 0.5, len = 80 * S * (1 - Math.pow(1 - t, 3)), dx = Math.cos(a) * len, dy = Math.sin(a) * len;
+        ctx.lineWidth = (9 - 5 * t) * (0.8 + g * 0.1); ctx.beginPath(); ctx.moveTo(x - dx, y - dy); ctx.lineTo(x + dx, y + dy); ctx.stroke();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x - dx * .8, y - dy * .8); ctx.lineTo(x + dx * .8, y + dy * .8); ctx.stroke(); ctx.strokeStyle = c;
+      }
+      break;
+    }
+    case 'meteor': {
+      const sx = x - 190 * S, sy = y - 210 * S, t = clamp(p / 0.5), hx = sx + (x - sx) * t, hy = sy + (y - sy) * t;
+      if (p < 0.55) {
+        const gr = ctx.createLinearGradient(sx + (hx - sx) * .2, sy + (hy - sy) * .2, hx, hy); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, c);
+        ctx.strokeStyle = gr; ctx.lineWidth = 12 * S; ctx.beginPath(); ctx.moveTo(sx + (hx - sx) * .2, sy + (hy - sy) * .2); ctx.lineTo(hx, hy); ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(hx, hy, 9 * S, 0, 6.3); ctx.fill();
+      } else {
+        const t2 = (p - 0.5) / 0.5; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(x, y, 10 + t2 * 95 * S, 0, 6.3); ctx.stroke();
+        ctx.globalAlpha *= 0.6; ctx.beginPath(); ctx.arc(x, y, 8 + t2 * 45 * S, 0, 6.3); ctx.fill();
+      }
+      break;
+    }
+    case 'bolt': {
+      for (let k = 0; k < 3; k++) {
+        if (Math.random() < 0.25) continue;
+        ctx.lineWidth = [10, 5, 2][k] * (0.8 + g * 0.1); ctx.strokeStyle = k === 2 ? '#fff' : c;
+        ctx.beginPath(); ef.pts.forEach((q, i) => { const jx = q[0] + (k ? 0 : (Math.random() * 6 - 3)); i ? ctx.lineTo(jx, q[1]) : ctx.moveTo(jx, q[1]); }); ctx.stroke();
+      }
+      ctx.strokeStyle = c; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 12 + e * 55 * S, 0, 6.3); ctx.stroke();
+      break;
+    }
+    case 'ring': {
+      for (let i = 0; i < 3; i++) { const t = clamp((p - i * 0.14) / 0.7); if (t <= 0) continue; ctx.globalAlpha = (1 - t) * 0.95; ctx.lineWidth = 8 - t * 5; ctx.beginPath(); ctx.arc(x, y, 12 + t * (95 + i * 18) * S, 0, 6.3); ctx.stroke(); }
+      break;
+    }
+    case 'burst': {
+      const n = 10 + g * 2 + (ef.seed % 4), r0 = 10 + e * 12 * S, r1 = 20 + e * 100 * S;
+      ctx.lineWidth = 4;
+      for (let i = 0; i < n; i++) { const a = ef.ang + i * 6.2832 / n; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r0, y + Math.sin(a) * r0); ctx.lineTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1); ctx.stroke(); }
+      ctx.globalAlpha *= 0.5; ctx.beginPath(); ctx.arc(x, y, 8 + e * 40 * S, 0, 6.3); ctx.fill();
+      break;
+    }
+    case 'spiral': {
+      ctx.lineWidth = 5;
+      for (let arm = 0; arm < 3; arm++) {
+        ctx.beginPath();
+        for (let i = 0; i <= 30; i++) { const t = i / 30, a = ef.ang + arm * 2.094 + t * 6 + p * 9, r = t * (30 + e * 80 * S); const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r * 0.8; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+        ctx.stroke();
+      }
+      break;
+    }
+    case 'beam': {
+      const th = (16 + g * 5) * Math.sin(Math.PI * clamp(p * 1.15)), ex = ox + (x - ox) * clamp(p * 3);
+      ctx.lineWidth = th; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, oy + (y - oy) * clamp(p * 3)); ctx.stroke();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = th * 0.35; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, oy + (y - oy) * clamp(p * 3)); ctx.stroke();
+      ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, 10 + e * 55 * S, 0, 6.3); ctx.stroke();
+      break;
+    }
+    case 'rain': {
+      const n = 14 + g * 4;
+      for (let i = 0; i < n; i++) {
+        const dl = _rnd(ef.seed * 31 + i) * 0.5, t = clamp((p - dl) / 0.4); if (t <= 0 || t >= 1) continue;
+        const tx = x + (_rnd(ef.seed * 17 + i) - 0.5) * 150 * S, ty = y + (_rnd(ef.seed * 7 + i) - 0.5) * 60, cy = ty - 190 + 190 * t;
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(tx - 10, cy - 36); ctx.lineTo(tx, cy); ctx.stroke();
+        if (t > 0.85) { ctx.beginPath(); ctx.arc(tx, ty, (t - 0.85) * 120, 0, 6.3); ctx.stroke(); }
+      }
+      break;
+    }
+    case 'orbs': {
+      const R = (1 - e) * 115 * S + 6, n = 6 + (g > 3 ? 2 : 0);
+      for (let i = 0; i < n; i++) { const a = ef.ang + i * 6.2832 / n + p * 5; ctx.beginPath(); ctx.arc(x + Math.cos(a) * R, y + Math.sin(a) * R * 0.75, 8 * S * (1 - p * 0.4), 0, 6.3); ctx.fill(); }
+      if (p > 0.7) { ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, (p - 0.7) / 0.3 * 70 * S, 0, 6.3); ctx.stroke(); }
+      break;
+    }
+    case 'wave': {
+      ctx.lineWidth = 6; const len = (x - ox) * clamp(p * 2.2);
+      for (let k = 0; k < 2; k++) { ctx.beginPath(); for (let i = 0; i <= 40; i++) { const t = i / 40, px = ox + len * t, py = oy + (y - oy) * t + Math.sin(t * 14 - p * 22 + k * 2) * (20 + g * 3) * (k ? .6 : 1); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke(); }
+      if (p > 0.4) { ctx.beginPath(); ctx.arc(x, y, (p - 0.4) * 130 * S, 0, 6.3); ctx.stroke(); }
+      break;
+    }
+    case 'pillar': {
+      const w = (28 + g * 7) * Math.sin(Math.PI * clamp(p * 1.1)), gr = ctx.createLinearGradient(0, 0, 0, y + 40);
+      gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.7, c); gr.addColorStop(1, '#fff');
+      ctx.fillStyle = gr; ctx.fillRect(x - w / 2, 0, w, y + 40);
+      ctx.strokeStyle = c; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(x, y + 36, 14 + e * 65 * S, 6 + e * 22 * S, 0, 0, 6.3); ctx.stroke();
+      break;
+    }
+    case 'shatter': {
+      const n = 10 + g;
+      for (let i = 0; i < n; i++) { const a = ef.ang + i * 6.2832 / n, d = 12 + e * (70 + _rnd(i + ef.seed) * 45) * S, cx = x + Math.cos(a) * d, cy = y + Math.sin(a) * d, s = 10 + _rnd(i * 3 + ef.seed) * 9; ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * s, cy + Math.sin(a) * s); ctx.lineTo(cx + Math.cos(a + 2.4) * s * .6, cy + Math.sin(a + 2.4) * s * .6); ctx.lineTo(cx + Math.cos(a - 2.4) * s * .6, cy + Math.sin(a - 2.4) * s * .6); ctx.closePath(); ctx.fill(); }
+      ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 10 + e * 60 * S, 0, 6.3); ctx.stroke();
+      break;
+    }
+    case 'vortex': {
+      const n = 26;
+      for (let i = 0; i < n; i++) { const a = i * 6.2832 / n * 3 + p * 10, r = (1 - e) * (115 * S) * (0.4 + _rnd(i + ef.seed) * 0.6) + 4; ctx.beginPath(); ctx.arc(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.7, 4 + g * 0.5, 0, 6.3); ctx.fill(); }
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(x, y, 10 + Math.sin(Math.PI * p) * 48 * S, 6 + Math.sin(Math.PI * p) * 30 * S, p * 4, 0, 6.3); ctx.stroke();
+      break;
+    }
+    case 'rift': {
+      const open = Math.sin(Math.PI * clamp(p * 1.05)) * 16 * S, h = 95 * S;
+      ctx.fillStyle = 'rgba(8,0,24,.9)'; ctx.beginPath(); ctx.moveTo(x, y - h);
+      for (let i = 1; i <= 8; i++) ctx.lineTo(x + open * (i % 2 ? 1 : .5) * Math.sin(Math.PI * i / 8), y - h + h * 2 * i / 8);
+      for (let i = 8; i >= 0; i--) ctx.lineTo(x - open * (i % 2 ? .5 : 1) * Math.sin(Math.PI * i / 8), y - h + h * 2 * i / 8);
+      ctx.closePath(); ctx.fill();
+      ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y - h); for (let i = 1; i <= 8; i++) ctx.lineTo(x + (i % 2 ? 6 : -6), y - h + h * 2 * i / 8); ctx.stroke();
+      break;
+    }
+    case 'bloom': {
+      for (let i = 0; i < 9; i++) { const t = clamp((p - i * 0.04) / 0.7), a = i * 0.7; ctx.beginPath(); ctx.arc(x + Math.cos(a * 3) * 55 * S * t, y + 30 - t * 100 * S + Math.sin(a) * 8, (9 - 5 * t) * (0.8 + g * .1), 0, 6.3); ctx.fill(); }
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, y, 8 + e * 70 * S, 0, 6.3); ctx.stroke();
+      break;
+    }
+    case 'stars': {
+      for (let i = 0; i < 7 + g; i++) { const a = ef.ang + i * 2.4, d = 14 + e * (40 + _rnd(i + ef.seed) * 60) * S; _starPath(ctx, x + Math.cos(a) * d, y + Math.sin(a) * d, (9 + _rnd(i) * 7) * (1 - p * .4), 4, 5, p * 4 + i); ctx.fill(); }
+      break;
+    }
+    case 'cross': {
+      const L = 40 + e * 70 * S; ctx.lineWidth = 9 - p * 5;
+      ctx.beginPath(); ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.stroke();
+      ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x - L * .7, y - L * .7); ctx.lineTo(x + L * .7, y + L * .7); ctx.moveTo(x + L * .7, y - L * .7); ctx.lineTo(x - L * .7, y + L * .7); ctx.stroke();
+      ctx.strokeRect(x - L * .45, y - L * .45, L * .9, L * .9);
+      break;
+    }
+    case 'nova': {
+      const rg = ctx.createRadialGradient(x, y, 0, x, y, 20 + e * W * 0.55); rg.addColorStop(0, '#fff'); rg.addColorStop(0.35, c); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = Math.min(1, (1 - p) * 1.3) * 0.85; ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, 20 + e * W * 0.55, 0, 6.3); ctx.fill();
+      ctx.globalAlpha = Math.min(1, (1 - p) * 1.7); ctx.lineWidth = 6;
+      for (let i = 0; i < 4; i++) { const t = clamp((p - i * 0.1) / 0.8); if (t > 0) { ctx.beginPath(); ctx.arc(x, y, t * (90 + i * 40) * S, 0, 6.3); ctx.stroke(); } }
+      for (let i = 0; i < 20; i++) { const a = i * 0.314 + p; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * 20, y + Math.sin(a) * 20); ctx.lineTo(x + Math.cos(a) * (30 + e * 150 * S), y + Math.sin(a) * (30 + e * 150 * S)); ctx.stroke(); }
+      break;
+    }
+    default: ctx.restore(); return false;
+  }
+  ctx.restore();
+  return true;
+}
+
+/* --- 컷인 배너 (전설 이상) + 이모지 파티클 + 호출 훅 --- */
+function showSkillCutIn(skill, hostId = 'battleArenaBox') {
+  const gi = skillGradeIdx(skill); if (gi < 4) return;
+  const host = document.getElementById(hostId); if (!host) return;
+  const th = SKILL_GRADE_THEME[SKILL_GRADES[gi]], d = document.createElement('div');
+  d.className = 'sk-cutin';
+  d.style.cssText = `--sk-c:${skill.color};--sk-g:${th.glow}`;
+  d.innerHTML = `${skillGradeImg(skill, 44)}<div><div class="sk-cutin-g">${'★'.repeat(gi + 1)} ${skill.grade}</div><div class="sk-cutin-n">${skill.name}</div></div>`;
+  host.appendChild(d); setTimeout(() => d.remove(), 1100);
+}
+function spawnSkillEmojiParticles(skill, x, y) {
+  const gi = skillGradeIdx(skill), n = 4 + gi * 2;
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.2832, sp = 2 + Math.random() * 5;
+    battleParticles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2, size: 12 + gi * 2 + Math.random() * 6, color: skill.color, alpha: 1, decay: 0.015 + Math.random() * 0.012, emoji: skill.fxEmoji || skill.icon });
+  }
+}
+
+/* --- 스킬 임팩트 미리보기 (스킬 카드의 ▶ 버튼) --- */
+function previewSkillFx(skillId) {
+  const sk = SKILLS_DB.find(s => s.id === skillId); if (!sk) return;
+  const old = document.getElementById('skFxPreview'); if (old) old.remove();
+  const ov = document.createElement('div'); ov.id = 'skFxPreview';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.82);display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.innerHTML = `<div style="width:min(420px,100%);background:linear-gradient(160deg,#0f172a,#1e1b4b);border:2px solid ${sk.color};border-radius:18px;padding:12px;box-shadow:0 0 30px ${sk.color}66">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">${skillGradeImg(sk, 52)}<div><div style="font-weight:900;color:${sk.color}">${sk.name}</div><div>${skillGradeBadge(sk)}</div></div><button id="skFxClose" style="margin-left:auto;font-size:20px;color:#fff;padding:4px 10px">✕</button></div>
+    <div style="position:relative;height:230px;border-radius:12px;overflow:hidden;background:radial-gradient(circle at 70% 50%,#312e81,#020617)"><canvas id="skFxCv" style="width:100%;height:100%;display:block"></canvas><div style="position:absolute;left:14%;top:46%;font-size:42px">🧙</div><div id="skFxEn" style="position:absolute;left:68%;top:38%;font-size:46px">👾</div></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button id="skFxReplay" style="flex:1;padding:8px;border-radius:10px;background:#7c3aed;color:#fff;font-weight:800">🔁 다시 보기</button></div></div>`;
+  document.body.appendChild(ov);
+  const cv = ov.querySelector('#skFxCv'); cv.width = cv.offsetWidth; cv.height = cv.offsetHeight;
+  const ctx = cv.getContext('2d'); let efs = [], parts = [], raf = 0, alive = true;
+  const play = () => {
+    efs.push(makeSkillFx(sk, cv.width * 0.72, cv.height * 0.5, cv.width, cv.height));
+    const gi = skillGradeIdx(sk);
+    for (let i = 0; i < 30 + gi * 12; i++) { const a = Math.random() * 6.2832, sp = 2 + Math.random() * 7; parts.push({ x: cv.width * 0.72, y: cv.height * 0.5, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, size: 3 + Math.random() * 5, color: i % 3 ? sk.color : '#fff', alpha: 1, decay: 0.02 + Math.random() * 0.02 }); }
+    for (let i = 0; i < 4 + gi * 2; i++) { const a = Math.random() * 6.2832, sp = 2 + Math.random() * 5; parts.push({ x: cv.width * 0.72, y: cv.height * 0.5, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2, size: 12 + gi * 2, color: sk.color, alpha: 1, decay: 0.015, emoji: sk.fxEmoji }); }
+    if (sk.heal) { /* 회복 스킬은 시전자 쪽에도 빛 */ }
+    if (gi >= 4) showSkillCutIn(sk, 'skFxPreview');
+  };
+  const loop = () => {
+    if (!alive) return; ctx.clearRect(0, 0, cv.width, cv.height);
+    for (let i = efs.length - 1; i >= 0; i--) { const ef = efs[i]; ef.progress += ef.speed; if (ef.progress >= 1) { efs.splice(i, 1); continue; } drawSkillFx(ctx, ef, cv); }
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const q = parts[i]; q.x += q.vx; q.y += q.vy; q.vy += 0.12; q.alpha -= q.decay; if (q.alpha <= 0) { parts.splice(i, 1); continue; }
+      ctx.save(); ctx.globalAlpha = q.alpha; ctx.fillStyle = q.color; ctx.shadowColor = q.color; ctx.shadowBlur = 10;
+      if (q.emoji) { ctx.font = q.size + 'px serif'; ctx.textAlign = 'center'; ctx.fillText(q.emoji, q.x, q.y); } else { ctx.beginPath(); ctx.arc(q.x, q.y, q.size, 0, 6.3); ctx.fill(); }
+      ctx.restore();
+    }
+    raf = requestAnimationFrame(loop);
+  };
+  const close = () => { alive = false; cancelAnimationFrame(raf); ov.remove(); };
+  ov.querySelector('#skFxClose').onclick = close; ov.addEventListener('click', e => { if (e.target === ov) close(); });
+  ov.querySelector('#skFxReplay').onclick = play;
+  loop(); setTimeout(play, 200);
+}
+
 const DEFAULT_STATE = {
   nickname: '모험가 찬우',
   level: 1,
@@ -1383,12 +1687,11 @@ function triggerBattleSkillImpact(skill, targetX, targetY) {
     enemySprite.classList.add('anim-hit');
   }
 
-  battleSlashEffects.push({
-    x: targetX, y: targetY,
-    color: skill.color,
-    kind: skill.id,
-    progress: 0
-  });
+  const _bc = document.getElementById('battleFxCanvas');
+  battleSlashEffects.push(makeSkillFx(skill, targetX, targetY, _bc ? _bc.width : 400, _bc ? _bc.height : 200));
+  spawnSkillEmojiParticles(skill, targetX, targetY);
+  showSkillCutIn(skill);
+  if (skillGradeIdx(skill) >= 5 && arena) { arena.style.transition = 'transform .12s'; arena.style.transform = 'scale(1.03)'; setTimeout(() => { arena.style.transform = ''; }, 140); }
 
   for (let i = 0; i < 45; i++) {
     const angle = Math.random() * Math.PI * 2;
@@ -1458,11 +1761,12 @@ function runParticleLoops() {
 
     for (let i = battleSlashEffects.length - 1; i >= 0; i--) {
       const ef = battleSlashEffects[i];
-      ef.progress += 0.07;
+      ef.progress += (ef.speed || 0.07);
       if (ef.progress >= 1) {
         battleSlashEffects.splice(i, 1);
         continue;
       }
+      if (ef.fx && drawSkillFx(bCtx, ef, bCanvas)) continue;
       bCtx.save();
       bCtx.globalAlpha = 1 - ef.progress;
       bCtx.strokeStyle = ef.color;
@@ -1498,9 +1802,8 @@ function runParticleLoops() {
       bCtx.fillStyle = p.color;
       bCtx.shadowColor = p.color;
       bCtx.shadowBlur = 10;
-      bCtx.beginPath();
-      bCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      bCtx.fill();
+      if (p.emoji) { bCtx.font = p.size + 'px serif'; bCtx.textAlign = 'center'; bCtx.fillText(p.emoji, p.x, p.y); }
+      else { bCtx.beginPath(); bCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2); bCtx.fill(); }
       bCtx.restore();
     }
   }
@@ -1922,12 +2225,17 @@ function renderActiveTab() {
             const isEquipped = state.equippedSkills.includes(sk.id);
             return `
               <div class="bg-slate-950/80 border border-slate-700 rounded-xl p-2.5 flex flex-col justify-between gap-2">
-                <div>
-                  <span class="font-bold text-sm" style="color:${sk.color}">${sk.icon} ${sk.name}</span>
-                  <span class="text-xs text-slate-300 ml-1">${sInfo.unlocked ? `Lv.${sInfo.level}` : '(미해금)'}</span>
-                  <p class="text-[11px] text-slate-400 mt-0.5">${sk.desc}</p>
+                <div class="flex gap-2 items-start">
+                  ${skillGradeImg(sk, 52)}
+                  <div class="min-w-0">
+                    <span class="font-bold text-sm" style="color:${sk.color}">${sk.name}</span>
+                    <span class="text-xs text-slate-300 ml-1">${sInfo.unlocked ? `Lv.${sInfo.level}` : '(미해금)'}</span>
+                    <div class="mt-0.5">${skillGradeBadge(sk)}</div>
+                    <p class="text-[11px] text-slate-400 mt-0.5">${sk.desc}</p>
+                  </div>
                 </div>
                 <div class="flex gap-1.5 justify-end">
+                  <button onclick="previewSkillFx('${sk.id}')" class="btn-game px-2.5 py-1 rounded-lg bg-slate-700 text-xs font-bold">▶ 임팩트</button>
                   ${sInfo.unlocked ? `
                     <button onclick="toggleEquipSkill('${sk.id}')" class="btn-game px-2.5 py-1 rounded-lg ${isEquipped ? 'bg-emerald-600' : 'bg-slate-700'} text-xs font-bold">
                       ${isEquipped ? '✓ 장착중' : '장착하기'}
@@ -2107,7 +2415,7 @@ function renderActiveTab() {
                 <button id="skillBtn_${sId}" onclick="useActiveSkill('${sId}')" ${!unlocked ? 'disabled' : ''}
                   class="btn-game relative overflow-hidden rounded-xl p-2 border flex flex-col items-center justify-center gap-0.5 bg-gradient-to-b from-slate-800 to-slate-950"
                   style="border-color: ${unlocked ? sk.color : '#334155'}">
-                  <span class="text-xl">${sk.icon}</span>
+                  ${skillGradeImg(sk, 36)}
                   <span class="text-[11px] font-bold text-white truncate w-full text-center">${sk.name}</span>
                   <span class="text-[10px] text-blue-300 font-mono">MP ${sk.mp}</span>
                   <div id="skillCdOverlay_${sId}" class="${cd > 0 ? 'flex' : 'hidden'} absolute inset-0 bg-black/80 items-center justify-center font-game text-lg text-amber-300">
@@ -2814,10 +3122,10 @@ function pullGacha(kind, count = 1) {
         entry.unlocked = true;
         if (!Array.isArray(state.equippedSkills)) state.equippedSkills = [];
         if (state.equippedSkills.length < 4 && !state.equippedSkills.includes(sk.id)) state.equippedSkills.push(sk.id);
-        results.push({rarity:'희귀', icon:sk.icon, name:sk.name, detail:'신규 스킬 해금!', label:'NEW'});
+        results.push({rarity:sk.grade, icon:sk.icon, name:sk.name, detail:'신규 스킬 해금!', label:'NEW · '+sk.grade});
       } else {
         entry.level = Math.min(20, (Number(entry.level)||1)+1);
-        results.push({rarity:'영웅', icon:sk.icon, name:sk.name, detail:`중복 → 스킬 레벨 ${entry.level}`, label:'강화'});
+        results.push({rarity:sk.grade, icon:sk.icon, name:sk.name, detail:`중복 → 스킬 레벨 ${entry.level}`, label:'강화 · '+sk.grade});
       }
     } else if (kind === 'furniture') {
       const pool = FURNITURE_DB.filter(f => ['rare','epic','legendary','mythic'].includes(f.grade));
@@ -3810,7 +4118,7 @@ AXO.pvpChallenge = async function(target){ await syncCloud(true); const {error}=
 AXO.pvpAnswer = async function(id,accept){ const {error}=await sb.rpc('chanwoo_pvp_answer',{p_match:id,p_accept:accept}); if(error)return showToast('대전 시작 실패: '+error.message); showToast('대전이 시작됐어요!'); refreshSocialPanels(); };
 AXO.pvpRefresh = refreshSocialPanels;
 AXO.pvpAttack = async function(){ const {data,error}=await sb.rpc('chanwoo_pvp_attack'); if(error)return showToast('공격 실패: '+error.message); showToast('⚔️ 기본 공격! '+nf(data?.damage)+' 피해'); refreshSocialPanels(); };
-AXO.pvpSkill = async function(skillId){ const sk=SKILLS_DB.find(x=>x.id===skillId), info=state.skills[skillId]; if(!sk||!info||!info.unlocked)return; const {data,error}=await sb.rpc('chanwoo_pvp_skill',{p_skill:skillId,p_mp:sk.mp,p_multiplier:sk.mult*(1+(Number(info.level||1)-1)*.25),p_heal:sk.heal||0}); if(error)return showToast('스킬 사용 실패: '+error.message); const arena=document.getElementById('pvpArena'); if(arena){ const fx=document.createElement('div'); fx.textContent=sk.icon+' '+sk.name+' IMPACT!'; fx.style.cssText='position:relative;text-align:center;padding:18px 8px;margin:8px 0;border:2px solid '+sk.color+';border-radius:14px;color:'+sk.color+';font-weight:900;text-shadow:0 0 14px '+sk.color+';animation:axPvpImpact .75s ease-out both;'; arena.prepend(fx); setTimeout(()=>fx.remove(),800); } showToast(`${sk.icon} ${sk.name}! ${nf(data?.damage)} 피해`); refreshSocialPanels(); };
+AXO.pvpSkill = async function(skillId){ const sk=SKILLS_DB.find(x=>x.id===skillId), info=state.skills[skillId]; if(!sk||!info||!info.unlocked)return; const {data,error}=await sb.rpc('chanwoo_pvp_skill',{p_skill:skillId,p_mp:sk.mp,p_multiplier:sk.mult*(1+(Number(info.level||1)-1)*.25),p_heal:sk.heal||0}); if(error)return showToast('스킬 사용 실패: '+error.message); const arena=document.getElementById('pvpArena'); if(arena){ const fx=document.createElement('div'); fx.innerHTML=skillGradeImg(sk,34)+' '+sk.name+' IMPACT!'; fx.style.cssText='position:relative;text-align:center;padding:18px 8px;margin:8px 0;border:2px solid '+sk.color+';border-radius:14px;color:'+sk.color+';font-weight:900;text-shadow:0 0 14px '+sk.color+';animation:axPvpImpact .75s ease-out both;'; arena.prepend(fx); setTimeout(()=>fx.remove(),800); } showToast(`${sk.icon} ${sk.name}! ${nf(data?.damage)} 피해`); refreshSocialPanels(); };
 
 /* ---------------------------- 협동 레이드 ---------------------------- */
 let coopBusy = false;
@@ -3976,7 +4284,7 @@ function coopShowSkillImpact(skill, damage) {
   const host = arena || document.getElementById('tabContent');
   if (!host) return;
   const fx = document.createElement('div');
-  fx.textContent = `${skill.icon} ${skill.name} · ${nf(damage)} 피해`;
+  fx.innerHTML = `${skillGradeImg(skill, 34)} ${esc(skill.name)} · ${nf(damage)} 피해`;
   fx.setAttribute('aria-live', 'polite');
   fx.style.cssText = `position:relative;z-index:5;margin:8px auto;padding:14px 10px;max-width:92%;text-align:center;border:2px solid ${skill.color};border-radius:16px;background:linear-gradient(120deg,rgba(15,23,42,.96),rgba(49,26,85,.96));color:${skill.color};font-weight:900;font-size:16px;text-shadow:0 0 12px ${skill.color};box-shadow:0 0 24px ${skill.color};animation:axPvpImpact .8s ease-out both;`;
   host.prepend(fx);
