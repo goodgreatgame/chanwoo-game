@@ -1249,6 +1249,71 @@ setInterval(async()=>{if(!currentUser||busy)return;try{await load();if(on())draw
 })();
 
 </script>
+<script>
+/* ===== GRAND UPDATE 3-A: 던전 탐험 ===== */
+(()=>{
+const G=['일반','고급','희귀','영웅','전설','신화','초월'],GC=['#9aa0b5','#5fd47a','#4aa8ff','#b36bff','#ffb43a','#ff5470','#7ff3ff'];
+const M=[['숲 슬라임','🟢',['거대 슬라임','🟢'],['숲의 왕 트렌트','🌳']],['망령','👻',['망령의 기사','⚔️'],['폐허의 군주','💀']],['용암 박쥐','🦇',['지옥의 용암 골렘','🌋'],['화염 군주','🔥']],['서리 병정','🧊',['얼음 기사단장','🛡️'],['서리 여왕','❄️']],['심연의 촉수','🐙',['신전 수호자','🗿'],['심연의 신','🌌']],['공허 그림자','🌀',['균열 포식자','👁️'],['차원의 파괴자','☄️']],['마족 병사','😈',['마왕의 늑대','🐺'],['마왕','👑']]];
+const ER={'level too low':'레벨이 부족해요','floor locked':'이전 층을 먼저 클리어해야 해요','no entries':'오늘 입장 횟수를 모두 썼어요','bad floor':'잘못된 층이에요'};
+let D=null,sel=null,busy=false;
+const on=()=>document.querySelector('#nav [data-tab="dungeon2"].active');
+const monOf=(id,f)=>{const m=M[id-1];return f%10===0?m[3]:f%5===0?m[2]:[m[0],m[1]]};
+const art=(e,id)=>{try{if(typeof svgArt==='function')return `<img src="${svgArt('monster',e,'dg'+id)}" style="width:100%;height:100%;object-fit:contain">`}catch(x){}return `<span style="font-size:70px">${e}</span>`};
+async function sync(){const r=await sb.from('player_stats').select('coins,gems').eq('user_id',currentUser.id).maybeSingle();if(r.data){S.coins=r.data.coins;S.gems=r.data.gems}try{render()}catch(e){}}
+async function push(){await sb.from('player_stats').update({coins:Math.floor(S.coins),gems:Math.floor(S.gems)}).eq('user_id',currentUser.id)}
+async function load(){const r=await sb.rpc('dungeon_status');if(r.error)throw r.error;D=r.data}
+function draw(){if(!on())return;const c=$('content');
+ if(!currentUser){c.innerHTML='<h2 class="sectiontitle">🏰 던전 탐험</h2><p>로그인 후 이용할 수 있어요.</p>';return}
+ if(!D){c.innerHTML='<p>불러오는 중...</p>';return}
+ const s=D.stats;
+ c.innerHTML=`<h2 class="sectiontitle">🏰 던전 탐험</h2><div class="card"><b>내 전투력 ${fmt(s.power)}</b><div class="tiny">공격 ${fmt(s.atk)} · 체력 ${fmt(s.hp)} · 방어 ${fmt(s.def)} · 치명 ${s.crit_rate+5}% · 치피 +${s.crit_dmg}% · 공속 +${s.atk_spd}% (장비 포함)</div><div class="tiny">던전은 서버가 전투를 계산하고 보상을 지급해요. 층마다 몬스터가 강해지고, 5·10층은 보스예요.</div></div>`+
+ D.dungeons.map(d=>{const lock=s.level<d.min_level,sl=sel===d.id;return `<div class="card" style="margin-top:9px;${lock?'opacity:.55':''}"><div class="row"><b class="grow">${d.id}. ${d.name}</b><span class="tiny">진행 ${d.best}/${d.floors}층</span></div>
+ <div style="height:7px;background:#ffffff22;border-radius:9px;margin:6px 0"><div style="height:100%;width:${d.best/d.floors*100}%;background:linear-gradient(90deg,#a78bfa,#ffd66b);border-radius:9px"></div></div>
+ <div class="tiny">입장 Lv.${d.min_level} · 권장 전투력 <span style="color:${s.power>=d.rec_power?'#6dff9a':'#ff9a9a'}">${fmt(d.rec_power)}</span> · 오늘 입장 ${d.left}/${d.daily}회</div>
+ <button class="action" style="margin-top:6px" data-d="${lock?'':d.id}" ${lock?'disabled':''}>${lock?'🔒 Lv.'+d.min_level+' 필요':sl?'접기':'층 선택'}</button>
+ ${sl?`<div class="grid" style="margin-top:8px">${Array.from({length:d.floors},(_,i)=>i+1).map(f=>{const ok=f<=d.best+1&&d.left>0,b=f%5===0;return `<button class="action" style="${b?'border:1px solid #ffb43a':''}" data-f="${f}" data-dd="${d.id}" ${ok?'':'disabled'}>${b?'👑 ':''}${f}층${f<=d.best?' ✓':''}</button>`}).join('')}</div>`:''}</div>`}).join('')}
+function arena(r,did){return new Promise(res=>{
+ const [nm,em]=monOf(did,r.floor),o=document.createElement('div');
+ o.style.cssText='position:fixed;inset:0;z-index:60;background:#000d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:14px;overflow:hidden';
+ o.innerHTML=`<style>@keyframes dgshake{0%,100%{transform:none}25%{transform:translate(-7px,3px)}75%{transform:translate(7px,-3px)}}@keyframes dgup{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-60px)}}.dgp{position:absolute;font-weight:900;pointer-events:none;animation:dgup .7s forwards;text-shadow:0 2px 4px #000}.dgb{height:12px;background:#ffffff22;border-radius:9px;overflow:hidden;width:min(86vw,340px)}.dgb i{display:block;height:100%;transition:width .25s}</style>
+ <div style="color:#ffd66b;font-weight:900;font-size:18px">${r.boss?'👑 ':''}${nm} · ${r.floor}층</div><div id="dgph" style="color:#ff8a8a;min-height:20px;font-weight:800"></div>
+ <div class="dgb"><i id="dgm" style="width:100%;background:linear-gradient(90deg,#ff5470,#ffb43a)"></i></div>
+ <div id="dga" style="position:relative;width:min(70vw,260px);height:min(70vw,260px)">${art(em,did)}</div>
+ <div class="dgb"><i id="dgp" style="width:100%;background:linear-gradient(90deg,#4aa8ff,#7ff3ff)"></i></div><div class="tiny" id="dgt">전투 시작!</div>`;
+ document.body.appendChild(o);
+ const A=o.querySelector('#dga'),mb=o.querySelector('#dgm'),pb=o.querySelector('#dgp'),ph=o.querySelector('#dgph'),tx=o.querySelector('#dgt');
+ let mh=r.mon_hp,ph0=r.p_hp,i=0,t0=0;
+ const pop=(t,col,x,y,sz)=>{const e=document.createElement('div');e.className='dgp';e.textContent=t;e.style.cssText+=`;color:${col};left:${x}%;top:${y}%;font-size:${sz}px`;A.appendChild(e);setTimeout(()=>e.remove(),720)};
+ function step(ts){if(!o.isConnected)return;if(ts-t0<420){requestAnimationFrame(step);return}t0=ts;
+  const L=r.log[i];if(!L){o.remove();res();return}
+  mh-=L[0];pop((L[1]?'💥 ':'')+fmt(L[0]),L[1]?'#ffd66b':'#fff',20+Math.random()*50,10+Math.random()*30,L[1]?30:20);
+  mb.style.width=Math.max(0,mh/r.mon_hp*100)+'%';
+  if(L[1]){A.style.animation='none';void A.offsetWidth;A.style.animation='dgshake .25s'}
+  const pct=Math.max(0,mh/r.mon_hp);if(r.boss){ph.textContent=pct<=.33?'🔥 3페이즈: 분노!':pct<=.66?'⚡ 2페이즈: 광역 공격':'';A.style.filter=pct<=.33?'hue-rotate(-40deg) saturate(1.8)':pct<=.66?'saturate(1.4)':'none'}
+  if(L[2]){ph0-=L[2];pb.style.width=Math.max(0,ph0/r.p_hp*100)+'%';tx.textContent=(L[3]?'⚠️ 강공격! ':'')+'받은 피해 '+fmt(L[2]);document.body.style.animation=L[3]?'dgshake .3s':''}
+  i++;requestAnimationFrame(step)}
+ requestAnimationFrame(step)})}
+function result(r){const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:61;background:#000c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;text-align:center';
+ const d=r.drop;o.innerHTML=`<h2 style="color:${r.win?'#ffd66b':'#ff7a7a'};text-shadow:0 0 18px currentColor">${r.win?(r.boss?'👑 보스 격파!':'🎉 클리어!'):'💀 패배...'}</h2>
+ ${r.win?`<div class="card"><div>🪙 코인 +${fmt(r.coin)}${r.gems?' · 💎 보석 +'+r.gems:''}</div><div>🔷 강화석 +${r.stones}${r.mat?' · 🧪 희귀 재료 +'+r.mat:''}</div><div>✨ 경험치 +${fmt(r.exp)}</div>${d?`<div style="margin-top:6px;color:${GC[d.grade]};font-weight:900;text-shadow:0 0 10px ${GC[d.grade]}">장비 획득: [${G[d.grade]}] ${d.name}</div>`:''}${r.first?'<div class="tiny">첫 클리어 보너스 포함</div>':''}</div>`:'<p class="tiny">전투력이 부족했어요. 장비를 강화하거나 레벨을 올려 보세요.</p>'}<div class="tiny">오늘 남은 입장 ${r.entries_left}회</div><button class="primary" style="max-width:240px">확인</button>`;
+ o.onclick=e=>{if(e.target.tagName==='BUTTON')o.remove()};document.body.appendChild(o)}
+async function fight(did,f){if(busy)return;busy=true;
+ try{await push();const r=await sb.rpc('dungeon_fight',{p_dungeon:did,p_floor:f});if(r.error)throw r.error;const x=r.data;
+  await arena(x,did);document.body.style.animation='';await sync();
+  if(x.win&&x.exp&&typeof addXP==='function'){try{addXP(x.exp);save();render()}catch(e){}}
+  result(x);await load()}
+ catch(e){const m=String(e.message||e);toast('실패: '+(Object.keys(ER).map(k=>m.includes(k)?ER[k]:'').find(Boolean)||m))}
+ finally{busy=false;draw()}}
+const _t=window.tab;
+window.tab=async function(t){if(t!=='dungeon2')return _t(t);
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='dungeon2'));
+ const c=$('content');c.onclick=e=>{const b=e.target.closest('[data-d],[data-f]');if(!b||busy)return;if(b.dataset.f)fight(+b.dataset.dd,+b.dataset.f);else{sel=sel===+b.dataset.d?null:+b.dataset.d;draw()}};
+ if(!currentUser){draw();return}c.innerHTML='<p>불러오는 중...</p>';
+ try{await load()}catch(e){c.innerHTML='<p>던전 데이터를 불러오지 못했어요. 3단계 SQL이 실행됐는지 확인해 주세요.<br><small>'+(e.message||e)+'</small></p>';return}draw()};
+const nav=$('nav');if(nav&&!nav.querySelector('[data-tab="dungeon2"]'))nav.insertAdjacentHTML('beforeend','<button data-tab="dungeon2">🏰 던전 탐험</button>');
+})();
+
+</script>
 </body></html>
 <style id="chibi-art-upgrade">
 .tile{position:relative;overflow:hidden;background:linear-gradient(155deg,#30265f,#171633)!important}
