@@ -3701,7 +3701,7 @@ async function coopLoad() {
       coopRpc('coop_get_party'),
       sb.from('coop_boss_settings').select('stage_no,boss_name,max_hp,time_limit,defense_pct').order('stage_no', { ascending: true })
     ]);
-    coopParty = party && party.party ? party.party : null;
+    coopParty = party && Object.prototype.hasOwnProperty.call(party, 'party') ? party.party : party;
     coopBosses = (!bossRes.error && bossRes.data) ? bossRes.data : [];
     coopRaidId = null; coopRaid = null;
     if (coopParty && coopParty.party_id) {
