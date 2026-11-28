@@ -3611,7 +3611,7 @@ const AXO = window.AXO = {
     const { error } = await sb.auth.signOut(); if (error) return showToast(error.message);
     user = null; devAuth = false; cloudBase = null;
     if (rankChannel) { try { await sb.removeChannel(rankChannel); } catch (e) { } rankChannel = null; }
-    updateAccountButton(); AXO.closeAccount(); showToast('로그아웃했어요.'); if (activeTab === 'rank' || activeTab === 'friends') renderActiveTab();
+    updateAccountButton(); AXO.closeAccount(); showToast('로그아웃했어요.'); if (activeTab === 'rank' || activeTab === 'friends' || activeTab === 'coop') renderActiveTab();
   },
   async saveNow() {
     const ok = await syncCloud(true), st = document.getElementById('axCloudStatus');
@@ -3671,10 +3671,136 @@ const AXO = window.AXO = {
   }
 };
 
+/* ---------------------------- 협동 레이드 ---------------------------- */
+let coopBusy = false;
+let coopParty = null;
+let coopRaidId = null;
+let coopRaid = null;
+let coopBosses = [];
+
+async function coopRpc(name, args = {}) {
+  if (!sb || !user) throw new Error('로그인이 필요합니다.');
+  const { data, error } = await sb.rpc(name, args);
+  if (error) throw error;
+  return data;
+}
+function coopError(e) {
+  const msg = (e && e.message) ? e.message : String(e || '알 수 없는 오류');
+  showToast(msg.length > 90 ? msg.slice(0, 90) + '…' : msg);
+}
+function coopMemberName(m) {
+  return esc((m && m.username) || '플레이어');
+}
+async function coopLoad() {
+  const root = document.getElementById('tabContent');
+  if (!root) return;
+  if (!user) { root.innerHTML = loginPrompt('협동 레이드'); return; }
+  root.innerHTML = `<div class="${CARD} text-center text-xs text-slate-300">⚔️ 협동 레이드 정보를 불러오는 중...</div>`;
+  try {
+    const [party, bossRes] = await Promise.all([
+      coopRpc('coop_get_party'),
+      sb.from('coop_boss_settings').select('stage_no,boss_name,max_hp,time_limit,defense_pct').order('stage_no', { ascending: true })
+    ]);
+    coopParty = party && party.party ? party.party : null;
+    coopBosses = (!bossRes.error && bossRes.data) ? bossRes.data : [];
+    coopRaidId = null; coopRaid = null;
+    if (coopParty && coopParty.party_id) {
+      const { data: active, error: raidErr } = await sb.from('coop_raids')
+        .select('id').eq('party_id', coopParty.party_id).in('status', ['active', 'cleared'])
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (!raidErr && active && active.id) coopRaidId = active.id;
+      if (coopRaidId) {
+        coopRaid = await coopRpc('coop_get_raid_state', { p_raid: coopRaidId });
+        const mine = (coopRaid.ranking || []).find(x => x.user_id === user.id);
+        if (coopRaid.status === 'cleared' && mine && mine.reward_claimed) { coopRaidId = null; coopRaid = null; }
+      }
+    }
+    coopRender();
+  } catch (e) {
+    root.innerHTML = `<div class="${CARD} text-center"><p class="text-sm font-bold text-rose-300">협동 레이드 정보를 불러오지 못했어요.</p><p class="text-xs text-slate-400 mt-2">${esc(e.message || e)}</p><button onclick="AXO.coopRefresh()" class="${BTN} bg-purple-700 mt-3">다시 시도</button></div>`;
+  }
+}
+function coopRender() {
+  const root = document.getElementById('tabContent');
+  if (!root) return;
+  if (!coopParty) {
+    root.innerHTML = `<div class="flex flex-col gap-3">
+      <div class="${CARD}"><div class="text-lg font-black text-amber-300">⚔️ 친구와 함께 보스 토벌!</div><p class="text-xs text-slate-300 mt-1">파티는 최대 4명까지 참여할 수 있어요. 파티에 참가하려면 친구가 공유한 파티 코드를 입력하세요.</p></div>
+      <div class="${CARD}"><b class="text-sm">🛡️ 새 파티 만들기</b><p class="text-[11px] text-slate-400 mt-1">파티를 만들면 내가 파티장이 됩니다.</p><button onclick="AXO.coopCreate()" class="${BTN} bg-purple-700 mt-2 w-full">파티 생성</button></div>
+      <div class="${CARD}"><b class="text-sm">🔑 친구 파티 참가</b><input id="coopPartyCode" class="${INPUT} mt-2" placeholder="친구가 공유한 파티 코드(UUID)" maxlength="40"><button onclick="AXO.coopJoin()" class="${BTN} bg-cyan-700 mt-2 w-full">파티 참가</button></div>
+      <div class="${CARD} text-[11px] text-slate-400">친구와 먼저 게임 내 친구 신청을 수락해야 파티에 참가할 수 있어요.</div>
+    </div>`;
+    return;
+  }
+  const members = Array.isArray(coopParty.members) ? coopParty.members : [];
+  const isLeader = coopParty.leader_id === user.id;
+  const memberHtml = members.map((m, i) => `<div class="flex items-center justify-between rounded-lg bg-slate-950/70 p-2 text-xs"><span>${i === 0 && m.user_id === coopParty.leader_id ? '👑 ' : '👤 '}${coopMemberName(m)}</span><span class="text-slate-500">${m.user_id === coopParty.leader_id ? '파티장' : '파티원'}</span></div>`).join('');
+  const bossOptions = coopBosses.length ? coopBosses.map(b => `<option value="${Number(b.stage_no)}">${Number(b.stage_no)}단계 · ${esc(b.boss_name)}</option>`).join('') : [1,2,3,4].map(n => `<option value="${n}">${n}단계 보스</option>`).join('');
+  let raidHtml = '';
+  if (coopRaidId && coopRaid) {
+    const hp = Math.max(0, Number(coopRaid.current_hp) || 0), maxHp = Math.max(1, Number(coopRaid.max_hp) || 1);
+    const pct = Math.max(0, Math.min(100, hp / maxHp * 100));
+    const ranking = Array.isArray(coopRaid.ranking) ? coopRaid.ranking : [];
+    const rankHtml = ranking.map((r, i) => `<div class="flex items-center justify-between text-xs py-1 border-b border-slate-800"><span>${i + 1}위 · ${esc(r.username || '플레이어')}</span><b class="text-amber-300">${nf(r.damage_dealt)} 피해</b></div>`).join('') || '<p class="text-xs text-slate-400">기록이 아직 없어요.</p>';
+    const cleared = coopRaid.status === 'cleared';
+    const ended = coopRaid.status === 'failed';
+    raidHtml = `<div class="${CARD}"><div class="flex items-center justify-between"><b class="text-sm text-rose-300">👹 ${esc(coopRaid.boss_name || '협동 보스')}</b><span class="text-[11px] ${cleared ? 'text-emerald-300' : ended ? 'text-slate-400' : 'text-cyan-300'}">${cleared ? '토벌 성공' : ended ? '시간 초과' : '전투 중'}</span></div>
+      <div class="mt-3 flex justify-between text-xs"><span>보스 체력</span><b>${nf(hp)} / ${nf(maxHp)}</b></div><div class="h-3 rounded-full bg-slate-800 overflow-hidden mt-1"><div class="h-full bg-gradient-to-r from-rose-700 to-orange-400" style="width:${pct}%"></div></div>
+      <p class="text-[11px] text-slate-400 mt-2">남은 시간: ${coopRaid.seconds_left == null ? '정보 없음' : nf(coopRaid.seconds_left) + '초'}</p>
+      ${!cleared && !ended ? `<div class="grid grid-cols-2 gap-2 mt-3"><button onclick="AXO.coopAttack('NORMAL')" class="${BTN} bg-rose-700">⚔️ 일반 공격</button><button onclick="AXO.coopAttack('ALL')" class="${BTN} bg-amber-700">💥 약점 공격</button></div>` : ''}
+      ${cleared ? `<button onclick="AXO.coopClaim()" class="${BTN} bg-emerald-700 mt-3 w-full">🎁 보상 받기</button>` : ''}
+      <div class="mt-3"><b class="text-xs">🏆 피해량 순위</b><div class="mt-1">${rankHtml}</div></div>
+      <button onclick="AXO.coopRefresh()" class="${BTN} bg-slate-700 mt-3 w-full">상태 새로고침</button></div>`;
+  } else {
+    raidHtml = `<div class="${CARD}"><b class="text-sm">👹 협동 레이드 시작</b><p class="text-[11px] text-slate-400 mt-1">파티장만 레이드를 시작할 수 있어요. 시작하면 현재 파티원이 모두 참가합니다.</p>${isLeader ? `<select id="coopStage" class="${INPUT} mt-2">${bossOptions}</select><button onclick="AXO.coopStart()" class="${BTN} bg-rose-700 mt-2 w-full">보스 레이드 시작</button>` : '<p class="text-xs text-amber-300 mt-2">파티장이 레이드를 시작할 때까지 기다려 주세요.</p>'}</div>`;
+  }
+  root.innerHTML = `<div class="flex flex-col gap-3"><div class="${CARD}"><div class="flex items-center justify-between"><b class="text-sm text-cyan-300">🤝 내 파티</b><span class="text-[11px] text-slate-400">${members.length}/4명</span></div><div class="mt-2 flex flex-col gap-1.5">${memberHtml}</div><div class="mt-3 flex flex-wrap gap-2"><button onclick="AXO.coopCopyCode()" class="${BTN} bg-cyan-700">🔗 파티 코드 복사</button><button onclick="AXO.coopRefresh()" class="${BTN} bg-slate-700">새로고침</button>${isLeader && members.length > 1 ? '<span class="text-[10px] text-amber-300 self-center">파티장은 다른 파티원이 모두 나간 뒤 탈퇴할 수 있어요.</span>' : `<button onclick="AXO.coopLeave()" class="${BTN} bg-slate-700">파티 나가기</button>`}</div><p class="text-[10px] text-slate-500 mt-2 break-all">파티 코드: ${esc(coopParty.party_id)}</p></div>${raidHtml}<div class="${CARD} text-[11px] text-slate-400">보상은 보스를 처치한 뒤 1회 받을 수 있어요. 토큰 보상은 지급하지 않습니다.</div></div>`;
+}
+
+AXO.coopRefresh = async function () { if (coopBusy) return; await coopLoad(); };
+AXO.coopCreate = async function () {
+  if (coopBusy) return; coopBusy = true;
+  try { const id = await coopRpc('coop_create_party'); showToast('파티를 만들었어요!'); await coopLoad(); }
+  catch (e) { coopError(e); } finally { coopBusy = false; }
+};
+AXO.coopJoin = async function () {
+  if (coopBusy) return; const id = (document.getElementById('coopPartyCode')?.value || '').trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return showToast('올바른 파티 코드를 입력해 주세요.');
+  coopBusy = true; try { await coopRpc('coop_join_party', { p_party: id }); showToast('파티에 참가했어요!'); await coopLoad(); }
+  catch (e) { coopError(e); } finally { coopBusy = false; }
+};
+AXO.coopLeave = async function () {
+  if (coopBusy || !confirm('현재 파티에서 나갈까요?')) return; coopBusy = true;
+  try { await coopRpc('coop_leave_party'); showToast('파티에서 나왔어요.'); await coopLoad(); }
+  catch (e) { coopError(e); } finally { coopBusy = false; }
+};
+AXO.coopCopyCode = function () {
+  if (!coopParty || !coopParty.party_id) return;
+  const id = coopParty.party_id;
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(id).then(() => showToast('파티 코드를 복사했어요!')).catch(() => prompt('파티 코드를 복사해 주세요.', id));
+  else prompt('파티 코드를 복사해 주세요.', id);
+};
+AXO.coopStart = async function () {
+  if (coopBusy) return; const stage = Number(document.getElementById('coopStage')?.value || 1); coopBusy = true;
+  try { const result = await coopRpc('coop_start_raid', { p_stage: stage }); coopRaidId = result && result.raid_id; showToast('협동 레이드가 시작됐어요!'); await coopLoad(); }
+  catch (e) { coopError(e); } finally { coopBusy = false; }
+};
+AXO.coopAttack = async function (type) {
+  if (coopBusy || !coopRaidId) return; coopBusy = true;
+  try { await syncCloud(false); const result = await coopRpc('coop_attack_boss', { p_raid: coopRaidId, p_type: type }); if (result && result.damage != null) showToast(`${nf(result.damage)} 피해!${result.critical ? ' 치명타!' : ''}`); await coopLoad(); }
+  catch (e) { coopError(e); } finally { coopBusy = false; }
+};
+AXO.coopClaim = async function () {
+  if (coopBusy || !coopRaidId) return; coopBusy = true;
+  try { const result = await coopRpc('coop_claim_raid_reward', { p_raid: coopRaidId }); state.gold += Number(result.gold) || 0; state.gem += Number(result.gems) || 0; gainExp(Number(result.xp) || 0); const items = Array.isArray(result && result.items) ? result.items : []; const names = items.map(x => `${x.grade}등급 장비`).join(', '); await syncCloud(true); saveGame(); showToast(`보상 획득! 골드 ${nf(result.gold)}, 보석 ${nf(result.gems)}, 경험치 ${nf(result.xp)}${result.is_mvp ? ' · MVP 보너스!' : ''}${names ? ' · ' + names : ''}`); await coopLoad(); }
+  catch (e) { coopError(e); } finally { coopBusy = false; }
+};
+
 /* ---------------------------- 탭 연결 ---------------------------- */
-TABS.push({ id: 'friends', label: '친구', icon: '👥' });
+TABS.push({ id: 'coop', label: '협동 레이드', icon: '⚔️' }, { id: 'friends', label: '친구', icon: '👥' });
 const _renderActiveTab2 = renderActiveTab;
 renderActiveTab = function () {
+  if (activeTab === 'coop') { coopLoad(); return; }
   if (activeTab === 'friends') {
     const c = document.getElementById('tabContent');
     c.innerHTML = user ? '<p class="text-xs text-slate-300">불러오는 중...</p>' : loginPrompt('친구 기능');
