@@ -1181,6 +1181,74 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-buy-egg],[
  if(!currentUser){toast('로그인 후 이용할 수 있어요');return}
  if(typeof window.__petPull==='function')window.__petPull('coins',b.hasAttribute('data-egg10')?10:1)},true);
 </script>
+<script>
+/* ===== GRAND UPDATE 2: 아이템·코인 거래 ===== */
+(()=>{
+const G=['일반','고급','희귀','영웅','전설','신화','초월'],GC=['#9aa0b5','#5fd47a','#4aa8ff','#b36bff','#ffb43a','#ff5470','#7ff3ff'];
+const SN={atk:'공격력',hp:'체력',def:'방어력',crit_rate:'치확',crit_dmg:'치피',atk_spd:'공속',skill_dmg:'스킬',boss_dmg:'보스',exp_gain:'경험치',coin_gain:'코인'};
+let defs={},mine=[],eqIds=[],trades=[],users=[],sel=null,cand=[],busy=false,known=null,q='';
+const nm=x=>(defs[x.def_id]||{}).name||'?';
+const it=x=>`<span style="color:${GC[x.grade]}">[${G[x.grade]}] ${nm(x)} +${x.enhance}</span>`;
+const st=s=>Object.entries(s||{}).map(([k,v])=>(SN[k]||k)+' +'+v).join(' · ');
+const esc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const box=(x,cb)=>`<label class="listitem" style="border-left:4px solid ${GC[x.grade]};padding-left:8px;cursor:pointer;justify-content:flex-start;gap:8px"><input type="checkbox" ${cb} value="${x.id}"><span>${it(x)}<div class="tiny">${st(x.stats)}</div></span></label>`;
+const sm=(a,c)=>{const t=(a||[]).map(it).join(', ')+((a||[]).length&&c?' + ':'')+(c?fmt(c)+'🪙':'');return t||'없음'};
+const on=()=>document.querySelector('#nav [data-tab="trade"].active');
+async function syncCoins(){const r=await sb.from('player_stats').select('coins,gems').eq('user_id',currentUser.id).maybeSingle();if(r.data){S.coins=r.data.coins;S.gems=r.data.gems}try{render()}catch(e){}}
+async function pushCoins(){await sb.from('player_stats').update({coins:Math.floor(S.coins),gems:Math.floor(S.gems)}).eq('user_id',currentUser.id)}
+function notify(){const me=currentUser.id,cur=Object.fromEntries(trades.map(t=>[t.id,t.status]));
+ if(known===null){const n=trades.filter(t=>t.status==='pending'&&t.receiver_id===me).length;if(n)toast('받은 아이템 거래 제안 '+n+'건');}
+ else for(const t of trades){const o=known[t.id];
+  if(o===undefined&&t.status==='pending'&&t.receiver_id===me)toast('🤝 새 거래 제안이 도착했어요!');
+  else if(o==='pending'&&t.sender_id===me&&t.status==='accepted'){toast('✅ 거래가 완료됐어요!');syncCoins().catch(()=>{})}
+  else if(o==='pending'&&t.sender_id===me&&t.status==='rejected'){toast('거래가 거절됐어요');syncCoins().catch(()=>{})}}
+ known=cur}
+async function load(){const u=currentUser.id;
+ const [d,i,e,t]=await Promise.all([sb.from('item_definitions').select('id,name'),sb.from('player_inventory').select('*').eq('user_id',u),sb.from('player_equipment').select('item_id').eq('user_id',u),sb.rpc('my_item_trades')]);
+ const err=d.error||i.error||t.error;if(err)throw err;
+ defs=Object.fromEntries(d.data.map(x=>[x.id,x]));mine=i.data||[];eqIds=(e.data||[]).map(x=>x.item_id);trades=t.data||[];notify()}
+function draw(){if(!on())return;const c=$('content');if(!currentUser){c.innerHTML='<h2 class="sectiontitle">🤝 거래</h2><p>로그인 후 이용할 수 있어요.</p>';return}
+ const me=currentUser.id,tradable=mine.filter(x=>!x.locked&&!x.trade_locked&&!eqIds.includes(x.id)).sort((a,b)=>b.grade-a.grade);
+ const inc=trades.filter(t=>t.status==='pending'&&t.receiver_id===me),out=trades.filter(t=>t.status==='pending'&&t.sender_id===me),hist=trades.filter(t=>t.status!=='pending').slice(0,15);
+ const SL={accepted:'✅ 완료',rejected:'❌ 거절',cancelled:'취소'};
+ c.innerHTML=`<h2 class="sectiontitle">🤝 아이템 · 코인 거래</h2>
+ <div class="card"><b>새 거래</b><div class="row" style="margin-top:8px"><input id="tq" class="secondary grow" placeholder="유저 이름 검색" value="${esc(q)}"><button class="action" data-t="search">검색</button></div>
+ ${users.length?`<div style="margin-top:6px">${users.map(u=>`<button class="action" style="margin:3px" data-t="pick" data-u="${u.id}" data-n="${esc(u.username)}">${esc(u.username||'플레이어')}</button>`).join('')}</div>`:''}
+ ${sel?`<div class="tiny" style="margin:8px 0">거래 상대: <b>${esc(sel.name)}</b></div>
+ <b>내가 줄 것</b><div style="max-height:200px;overflow:auto">${tradable.map(x=>box(x,'data-po')).join('')||'<p class="tiny">거래 가능한 아이템이 없어요 (잠금·장착·거래 중 제외)</p>'}</div>
+ <div class="row"><span class="tiny">코인</span><input id="oc" type="number" min="0" value="0" class="secondary grow"></div>
+ <b>받을 것</b><div style="max-height:200px;overflow:auto">${cand.map(x=>box(x,'data-pr')).join('')||'<p class="tiny">상대의 거래 가능한 아이템이 없어요</p>'}</div>
+ <div class="row"><span class="tiny">코인</span><input id="rc" type="number" min="0" value="0" class="secondary grow"></div>
+ <button class="primary" data-t="send">거래 제안 보내기</button><div class="tiny">보내는 코인은 제안 즉시 보관되고, 아이템은 잠깁니다. 취소·거절 시 돌려받아요.</div>`:''}</div>
+ <div class="card" style="margin-top:9px"><b>받은 제안 (${inc.length})</b>${inc.map(t=>`<div class="listitem" style="display:block"><div><b>${esc(t.sender_name||'플레이어')}</b> 님이 제안</div><div class="tiny">받는 것: ${sm(t.offer_items,t.offer_coins)}</div><div class="tiny">줘야 할 것: ${sm(t.request_items,t.request_coins)}</div><div class="row" style="margin-top:6px"><button class="action" data-t="acc" data-i="${t.id}">수락</button><button class="action" data-t="rej" data-i="${t.id}">거절</button></div></div>`).join('')||'<p class="tiny">없음</p>'}</div>
+ <div class="card" style="margin-top:9px"><b>보낸 제안 (${out.length})</b>${out.map(t=>`<div class="listitem" style="display:block"><div><b>${esc(t.receiver_name||'플레이어')}</b> 님에게</div><div class="tiny">줄 것: ${sm(t.offer_items,t.offer_coins)}</div><div class="tiny">받을 것: ${sm(t.request_items,t.request_coins)}</div><button class="action" style="margin-top:6px" data-t="can" data-i="${t.id}">취소</button></div>`).join('')||'<p class="tiny">없음</p>'}</div>
+ <div class="card" style="margin-top:9px"><b>거래 기록</b>${hist.map(t=>`<div class="listitem" style="display:block"><div class="tiny">${SL[t.status]||t.status} · ${t.sender_id===me?'→ '+esc(t.receiver_name||'?'):'← '+esc(t.sender_name||'?')} · ${new Date(t.created_at).toLocaleString('ko-KR')}</div><div class="tiny">${t.sender_id===me?'준 것':'받은 것'}: ${sm(t.offer_items,t.offer_coins)} / ${t.sender_id===me?'받은 것':'준 것'}: ${sm(t.request_items,t.request_coins)}</div></div>`).join('')||'<p class="tiny">기록 없음</p>'}</div>`}
+const ER={'not enough coins':'코인이 부족해요','offer item unavailable':'내 아이템을 사용할 수 없어요 (잠금·장착·거래 중)','request item unavailable':'상대 아이템이 더 이상 거래 가능하지 않아요','offer items changed':'상대 아이템 상태가 바뀌었어요','trade not pending':'이미 처리된 거래예요','too many pending trades':'진행 중인 제안이 너무 많아요','empty trade':'주고받을 것을 선택해 주세요','receiver not found':'상대를 찾을 수 없어요'};
+const msg=e=>{const m=String(e.message||e);for(const k in ER)if(m.includes(k))return ER[k];return m};
+async function act(b){const a=b.dataset.t,c=$('content');if(busy)return;busy=true;
+ try{
+  if(a==='search'){q=($('tq').value||'').trim();if(q.length<1){toast('이름을 입력해 주세요');return}
+   const r=await sb.from('profiles').select('id,username').ilike('username','%'+q.replace(/[%_]/g,'')+'%').neq('id',currentUser.id).limit(10);if(r.error)throw r.error;users=r.data||[];if(!users.length)toast('검색 결과가 없어요')}
+  else if(a==='pick'){sel={id:b.dataset.u,name:b.dataset.n};const r=await sb.rpc('list_trade_candidates',{p_user:sel.id});if(r.error)throw r.error;cand=r.data||[]}
+  else if(a==='send'){const po=[...c.querySelectorAll('[data-po]:checked')].map(x=>x.value),pr=[...c.querySelectorAll('[data-pr]:checked')].map(x=>x.value),oc=Math.max(0,Math.floor(+$('oc').value||0)),rc=Math.max(0,Math.floor(+$('rc').value||0));
+   if(oc>Math.floor(S.coins)){toast('코인이 부족해요');return}
+   await pushCoins();const r=await sb.rpc('create_item_trade',{p_receiver:sel.id,p_offer_items:po,p_offer_coins:oc,p_request_items:pr,p_request_coins:rc});if(r.error)throw r.error;
+   await syncCoins();toast('거래 제안을 보냈어요');sel=null;cand=[];users=[];await load()}
+  else{const fn={acc:'accept_item_trade',rej:'reject_item_trade',can:'cancel_item_trade'}[a];if(!fn)return;if(a==='acc')await pushCoins();
+   const r=await sb.rpc(fn,{p_id:b.dataset.i});if(r.error)throw r.error;await syncCoins();toast(a==='acc'?'✅ 거래가 완료됐어요!':a==='rej'?'거절했어요':'취소했어요');await load()}
+ }catch(e){toast('실패: '+msg(e))}finally{busy=false;draw()}}
+const _t=window.tab;
+window.tab=async function(t){if(t!=='trade')return _t(t);
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='trade'));
+ const c=$('content');c.onclick=e=>{const b=e.target.closest('[data-t]');if(b)act(b)};c.innerHTML='<p>불러오는 중...</p>';
+ if(!currentUser){draw();return}
+ try{await load()}catch(e){c.innerHTML='<p>거래 데이터를 불러오지 못했어요. 2단계 SQL이 실행됐는지 확인해 주세요.<br><small>'+esc(e.message||e)+'</small></p>';return}draw()};
+const nav=$('nav');if(nav&&!nav.querySelector('[data-tab="trade"]'))nav.insertAdjacentHTML('beforeend','<button data-tab="trade">🤝 거래</button>');
+/* 거래 알림: 10초마다 확인 (탭을 열지 않아도 토스트로 알려줌) */
+setInterval(async()=>{if(!currentUser||busy)return;try{await load();if(on())draw()}catch(e){}},10000);
+})();
+
+</script>
 </body></html>
 <style id="chibi-art-upgrade">
 .tile{position:relative;overflow:hidden;background:linear-gradient(155deg,#30265f,#171633)!important}
