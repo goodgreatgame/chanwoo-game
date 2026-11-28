@@ -135,7 +135,7 @@
     box-shadow: 0 0 22px rgba(244,114,182,0.85), 0 0 10px rgba(253,224,71,0.7);
   }
 </style>
-</head>
+<style>@keyframes axPvpImpact{0%{transform:scale(.25) rotate(-8deg);opacity:0;filter:blur(8px)}45%{transform:scale(1.12);opacity:1;filter:blur(0);box-shadow:0 0 32px currentColor}100%{transform:scale(1);opacity:0;filter:blur(2px)}}</style></head>
 <body class="flex flex-col items-center justify-start pb-6">
 
 <!-- 메인 앱 컨테이너 -->
@@ -908,7 +908,19 @@ const WEAPONS_DB = [
   { id: 'w3', name: '아케인 플라즈마 블레이드', atk: 240, grade: '영웅', icon: '🔮' },
   { id: 'w4', name: '천공의 발키리 신창', atk: 880, grade: '전설', icon: '🔱' },
   { id: 'w5', name: '성좌의 은하 대검', atk: 3200, grade: '신화', icon: '🌌' },
-  { id: 'w6', name: '창세의 절대성검 엑스칼리버', atk: 12500, grade: '초월', icon: '👑' }
+  { id: 'w6', name: '창세의 절대성검 엑스칼리버', atk: 12500, grade: '초월', icon: '👑' },
+  { id: 'w7', name: '빙결의 서리창', atk: 18500, grade: '초월', icon: '🧊' },
+  { id: 'w8', name: '홍련의 마검', atk: 26000, grade: '초월', icon: '🌋' },
+  { id: 'w9', name: '번개의 심판자', atk: 38000, grade: '신화', icon: '⚡' },
+  { id: 'w10', name: '심연의 포식자', atk: 54000, grade: '신화', icon: '🦈' },
+  { id: 'w11', name: '시간을 가르는 시계검', atk: 76000, grade: '신화', icon: '⏳' },
+  { id: 'w12', name: '은하수의 별빛 활', atk: 105000, grade: '신화', icon: '🏹' },
+  { id: 'w13', name: '천둥신의 거대 망치', atk: 145000, grade: '신화', icon: '🔨' },
+  { id: 'w14', name: '차원 균열의 낫', atk: 200000, grade: '초월', icon: '🌀' },
+  { id: 'w15', name: '태초의 창조자', atk: 280000, grade: '초월', icon: '🌠' },
+  { id: 'w16', name: '찬우의 궁극 병맛검', atk: 390000, grade: '초월', icon: '🤪' },
+  { id: 'w17', name: '우주의 관리자', atk: 550000, grade: '초월', icon: '🌌' },
+  { id: 'w18', name: '무한회귀의 종결자', atk: 780000, grade: '초월', icon: '♾️' }
 ];
 
 const PETS_DB = [
@@ -3752,6 +3764,18 @@ const AXO = window.AXO = {
   }
 };
 
+
+// 거래/PVP 요청은 전용 SECURITY DEFINER RPC에서 소유권과 전투 결과를 검증합니다.
+AXO.tradeSearch = async function(){ const q=(document.getElementById('tradeUser')?.value||'').trim(); if(!q)return showToast('닉네임을 입력해 주세요.'); const {data,error}=await sb.from('profiles').select('id,username').ilike('username','%'+q.replace(/[%_]/g,'')+'%').neq('id',user.id).limit(8); if(error)return showToast(error.message); const el=document.getElementById('tradeUsers'); if(el)el.innerHTML=(data||[]).map(u=>`<div class="flex items-center justify-between py-1"><span>${esc(u.username)}</span><button onclick="AXO.tradeOffer('${u.id}')" class="${BTN} bg-cyan-700">선택 아이템 제안</button></div>`).join('')||'검색 결과가 없어요.'; };
+AXO.tradeOffer = async function(target){ const ids=[...document.querySelectorAll('.tradeWeapon:checked')].map(x=>x.value); if(ids.length!==1)return showToast('한 번에 무기 1개를 선택해 주세요.'); const {error}=await sb.rpc('chanwoo_trade_offer',{p_receiver:target,p_item_id:ids[0]}); if(error)return showToast('교환 제안 실패: '+error.message); showToast('교환 제안을 보냈어요!'); };
+AXO.tradeAnswer = async function(id,accept){ const {error}=await sb.rpc('chanwoo_trade_answer',{p_offer:id,p_accept:accept}); if(error)return showToast('교환 처리 실패: '+error.message); showToast(accept?'교환 완료!':'제안을 거절했어요.'); if(accept) await loadCloud(true); refreshSocialPanels(); };
+AXO.pvpSearch = async function(){ const q=(document.getElementById('pvpUser')?.value||'').trim(); if(!q)return showToast('닉네임을 입력해 주세요.'); const {data,error}=await sb.from('profiles').select('id,username').ilike('username','%'+q.replace(/[%_]/g,'')+'%').neq('id',user.id).limit(8); if(error)return showToast(error.message); const el=document.getElementById('pvpUsers'); if(el)el.innerHTML=(data||[]).map(u=>`<div class="flex items-center justify-between py-1"><span>${esc(u.username)}</span><button onclick="AXO.pvpChallenge('${u.id}')" class="${BTN} bg-rose-700">대전 신청</button></div>`).join('')||'검색 결과가 없어요.'; };
+AXO.pvpChallenge = async function(target){ await syncCloud(true); const {error}=await sb.rpc('chanwoo_pvp_challenge',{p_opponent:target,p_attack:getPlayerStats().atk,p_hp:getPlayerStats().maxHp,p_level:state.level}); if(error)return showToast('대전 신청 실패: '+error.message); showToast('대전 신청을 보냈어요!'); refreshSocialPanels(); };
+AXO.pvpAnswer = async function(id,accept){ const {error}=await sb.rpc('chanwoo_pvp_answer',{p_match:id,p_accept:accept}); if(error)return showToast('대전 시작 실패: '+error.message); showToast('대전이 시작됐어요!'); refreshSocialPanels(); };
+AXO.pvpRefresh = refreshSocialPanels;
+AXO.pvpAttack = async function(){ const {data,error}=await sb.rpc('chanwoo_pvp_attack'); if(error)return showToast('공격 실패: '+error.message); showToast('⚔️ 기본 공격! '+nf(data?.damage)+' 피해'); refreshSocialPanels(); };
+AXO.pvpSkill = async function(skillId){ const sk=SKILLS_DB.find(x=>x.id===skillId), info=state.skills[skillId]; if(!sk||!info||!info.unlocked)return; const {data,error}=await sb.rpc('chanwoo_pvp_skill',{p_skill:skillId,p_mp:sk.mp,p_multiplier:sk.mult*(1+(Number(info.level||1)-1)*.25),p_heal:sk.heal||0}); if(error)return showToast('스킬 사용 실패: '+error.message); const arena=document.getElementById('pvpArena'); if(arena){ const fx=document.createElement('div'); fx.textContent=sk.icon+' '+sk.name+' IMPACT!'; fx.style.cssText='position:relative;text-align:center;padding:18px 8px;margin:8px 0;border:2px solid '+sk.color+';border-radius:14px;color:'+sk.color+';font-weight:900;text-shadow:0 0 14px '+sk.color+';animation:axPvpImpact .75s ease-out both;'; arena.prepend(fx); setTimeout(()=>fx.remove(),800); } showToast(`${sk.icon} ${sk.name}! ${nf(data?.damage)} 피해`); refreshSocialPanels(); };
+
 /* ---------------------------- 협동 레이드 ---------------------------- */
 let coopBusy = false;
 let coopParty = null;
@@ -3940,10 +3964,40 @@ AXO.coopClaim = async function () {
   catch (e) { coopError(e); } finally { coopBusy = false; }
 };
 
+
+/* ---------------------------- 유저 교환 / 실시간 PVP ---------------------------- */
+let socialRows = [], socialBusy = false, socialTarget = null, activeDuel = null;
+function renderTradeTab() {
+  if (!user) return loginPrompt('유저 간 아이템 교환');
+  const weapons = WEAPONS_DB.filter(w => (state.ownedWeapons || []).includes(w.id));
+  return `<div class="flex flex-col gap-3"><div class="${CARD}"><b class="text-sm text-cyan-300">🔁 유저 간 아이템 교환</b><p class="text-[11px] text-slate-400 mt-1">보유 무기를 다른 유저에게 제안할 수 있어요. 수락 전에는 아이템이 이동하지 않아요.</p><div class="flex gap-2 mt-2"><input id="tradeUser" class="${INPUT}" placeholder="상대 닉네임"><button onclick="AXO.tradeSearch()" class="${BTN} bg-purple-700 shrink-0">유저 찾기</button></div><div id="tradeUsers" class="mt-2"></div></div><div class="${CARD}"><b class="text-xs">📦 교환할 수 있는 내 무기</b><div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">${weapons.map(w=>`<label class="flex items-center gap-2 rounded-lg bg-slate-950 p-2 text-xs"><input type="checkbox" value="${w.id}" class="tradeWeapon"><span>${w.icon} ${esc(w.name)} · ${esc(w.grade)}</span></label>`).join('') || '<p class="text-slate-400">교환 가능한 무기가 없어요.</p>'}</div><p class="text-[10px] text-slate-500 mt-2">무기 단위 교환만 지원해요. 장착 중인 무기는 교환할 수 없어요.</p></div><div class="${CARD}"><b class="text-xs">📨 받은 교환 제안</b><div id="tradeInbox" class="mt-2 text-[11px] text-slate-400">불러오는 중...</div></div></div>`;
+}
+function renderOnlinePvpTab() {
+  if (!user) return loginPrompt('실시간 유저 PVP');
+  return `<div class="flex flex-col gap-3"><div class="${CARD}"><b class="text-sm text-rose-300">🥊 실시간 유저 PVP</b><p class="text-[11px] text-slate-400 mt-1">닉네임으로 상대를 찾아 대전을 신청하세요. 서버가 HP·MP·피해량을 판정합니다.</p><div class="flex gap-2 mt-2"><input id="pvpUser" class="${INPUT}" placeholder="상대 닉네임"><button onclick="AXO.pvpSearch()" class="${BTN} bg-rose-700 shrink-0">상대 찾기</button></div><div id="pvpUsers" class="mt-2"></div></div><div class="${CARD}"><b class="text-xs">⚔️ 대전 요청</b><div id="pvpInbox" class="mt-2 text-[11px] text-slate-400">불러오는 중...</div></div><div id="pvpArena" class="${CARD}"><p class="text-xs text-slate-400">진행 중인 대전이 없어요.</p></div></div>`;
+}
+async function refreshSocialPanels() {
+  if (!user || !sb) return;
+  try {
+    if (activeTab === 'trade') {
+      const {data,error}=await sb.rpc('chanwoo_trade_inbox'); if(error) throw error;
+      const el=document.getElementById('tradeInbox'); if(el) el.innerHTML=(data||[]).map(x=>`<div class="flex items-center justify-between gap-2 border-b border-slate-700 py-2"><span>${esc(x.sender_name)} → ${esc(x.item_name)}</span><span class="flex gap-1"><button onclick="AXO.tradeAnswer('${x.id}',true)" class="${BTN} bg-emerald-700">수락</button><button onclick="AXO.tradeAnswer('${x.id}',false)" class="${BTN} bg-slate-700">거절</button></span></div>`).join('') || '받은 제안이 없어요.';
+    }
+    if (activeTab === 'onlinepvp') {
+      const {data,error}=await sb.rpc('chanwoo_pvp_inbox'); if(error) throw error;
+      const el=document.getElementById('pvpInbox'); if(el) el.innerHTML=(data||[]).map(x=>`<div class="flex items-center justify-between gap-2 border-b border-slate-700 py-2"><span>${esc(x.challenger_name)}의 대전 신청</span><button onclick="AXO.pvpAnswer('${x.id}',true)" class="${BTN} bg-rose-700">대전 수락</button></div>`).join('') || '새 대전 신청이 없어요.';
+      const {data:d}=await sb.rpc('chanwoo_pvp_current'); activeDuel=d;
+      const arena=document.getElementById('pvpArena'); if(arena) arena.innerHTML=d ? `<b class="text-xs">⚔️ ${esc(d.opponent_name)}와 대전 중</b><div class="grid grid-cols-2 gap-2 mt-2 text-xs"><div>내 HP ${nf(d.my_hp)} / ${nf(d.my_max_hp)}</div><div>상대 HP ${nf(d.opponent_hp)} / ${nf(d.opponent_max_hp)}</div></div><div class="grid grid-cols-2 gap-2 mt-3">${(state.equippedSkills||[]).map(id=>{const sk=SKILLS_DB.find(z=>z.id===id), info=state.skills[id];return sk&&info&&info.unlocked?`<button onclick="AXO.pvpSkill('${id}')" class="${BTN} bg-violet-700">${sk.icon} ${esc(sk.name)} · MP ${sk.mp}</button>`:''}).join('')}</div><button onclick="AXO.pvpAttack()" class="${BTN} bg-rose-700 mt-2">⚔️ 기본 공격</button><button onclick="AXO.pvpRefresh()" class="${BTN} bg-slate-700 mt-2">전투 상태 새로고침</button>` : '<p class="text-xs text-slate-400">진행 중인 대전이 없어요.</p>';
+    }
+  } catch(e) { const el=document.getElementById(activeTab==='trade'?'tradeInbox':'pvpInbox'); if(el) el.textContent='SQL 설정이 필요해요: '+(e.message||e); }
+}
+
 /* ---------------------------- 탭 연결 ---------------------------- */
-TABS.push({ id: 'coop', label: '협동 레이드', icon: '⚔️' }, { id: 'friends', label: '친구', icon: '👥' });
+TABS.push({ id: 'coop', label: '협동 레이드', icon: '⚔️' }, { id: 'friends', label: '친구', icon: '👥' }, { id: 'trade', label: '유저 교환', icon: '🔁' }, { id: 'onlinepvp', label: '실시간 PVP', icon: '🥊' });
 const _renderActiveTab2 = renderActiveTab;
 renderActiveTab = function () {
+  if (activeTab === 'trade') { document.getElementById('tabContent').innerHTML = renderTradeTab(); refreshSocialPanels(); return; }
+  if (activeTab === 'onlinepvp') { document.getElementById('tabContent').innerHTML = renderOnlinePvpTab(); refreshSocialPanels(); return; }
   if (activeTab === 'coop') { coopLoad(); return; }
   if (activeTab === 'friends') {
     const c = document.getElementById('tabContent');
