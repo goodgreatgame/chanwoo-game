@@ -1043,6 +1043,49 @@ setInterval(()=>{if(currentUser&&!E.loaded){E.loaded=true;load().catch(()=>{E.lo
 })();
 
 </script>
+<script>
+/* ===== GRAND UPDATE 1-B: 펫 소환 ===== */
+(()=>{
+const G=['일반','고급','희귀','영웅','전설','신화','초월'],GC=['#9aa0b5','#5fd47a','#4aa8ff','#b36bff','#ffb43a','#ff5470','#7ff3ff'],GP=[50,28,14,5.5,2,.45,.05];
+const DUP=[500,1000,2500,6000,15000,40000,100000];
+const PG={slime:0,mushroom:0,chick:0,bunny:1,panda:1,penguin:1,choidanbi:2,joyujeong:2,owl:2,dragon:3,cloud:3,griffin:3,moonfox:4,thunderwolf:4,star:5,phoenix:5,kraken:5,abyss:6,celestial:6};
+const NEW={mushroom:{name:'버섯 요정',icon:'🍄',bonus:.05,price:0},chick:{name:'병아리 마법사',icon:'🐥',bonus:.06,price:0},panda:{name:'대나무 판다',icon:'🐼',bonus:.12,price:0},penguin:{name:'얼음 펭귄',icon:'🐧',bonus:.18,price:0},owl:{name:'달빛 부엉이',icon:'🦉',bonus:.3,price:0},griffin:{name:'황금 그리핀',icon:'🦅',bonus:.5,price:0},kraken:{name:'심해 크라켄',icon:'🐙',bonus:.85,price:0},celestial:{name:'천상의 별고래',icon:'🐋',bonus:1.5,price:0}};
+for(const k in NEW)if(!petCatalog[k])petCatalog[k]=NEW[k];
+let pity=0,busy=false;
+const on=()=>document.querySelector('#nav [data-tab="petgacha"].active');
+async function loadPity(){const r=await sb.from('gacha_pity').select('pet_pulls').eq('user_id',currentUser.id).maybeSingle();pity=(r.data&&r.data.pet_pulls)||0}
+function draw(){if(!on())return;const c=$('content');
+ if(!currentUser){c.innerHTML='<h2 class="sectiontitle">🐾 펫 소환</h2><p>로그인 후 이용할 수 있어요.</p>';return}
+ const all=Object.keys(petCatalog);
+ c.innerHTML=`<h2 class="sectiontitle">🐾 펫 소환</h2><div class="card"><div class="row"><button class="primary grow" data-pa="coins" data-n="1">코인 1회 · 4,000🪙</button><button class="primary grow" data-pa="coins" data-n="10">코인 10연 · 38,000🪙</button></div><div class="row"><button class="primary grow" data-pa="gems" data-n="1">보석 1회 · 40💎</button><button class="primary grow" data-pa="gems" data-n="10">보석 10연 · 380💎</button></div>
+ <div class="tiny">천장 ${pity}/50 (50번째 소환은 영웅 이상 확정) · 중복 펫은 등급별 코인으로 변환</div>
+ <div class="tiny">확률: ${G.map((g,i)=>`<span style="color:${GC[i]}">${g} ${GP[i]}%</span>`).join(' · ')}</div></div>
+ <h3>도감 (${S.pets.length}/${all.length})</h3><div class="grid">${all.sort((a,b)=>PG[b]-PG[a]).map(id=>{const p=petCatalog[id],o=S.pets.includes(id);return `<div class="tile" style="border:2px solid ${GC[PG[id]]};${o?'':'opacity:.5'}"><div class="pet-emoji" style="font-size:38px;padding:6px">${p.icon}</div><b style="color:${GC[PG[id]]}">${p.name}</b><small>[${G[PG[id]]}] 생산량 +${Math.round(p.bonus*100)}%</small><div class="tiny">${o?'보유 중':'미발견'}</div></div>`}).join('')}</div>`}
+function show(res){const best=Math.max(...res.map(r=>r.g)),o=document.createElement('div');
+ o.style.cssText='position:fixed;inset:0;z-index:50;background:#000c;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;overflow:auto';
+ o.innerHTML=`<style>@keyframes ppop{from{transform:scale(.3);opacity:0}}</style><h2 style="color:${GC[best]};text-shadow:0 0 20px ${GC[best]}">${best>=3?'✨ '+G[best]+' 펫 등장! ✨':'소환 결과'}</h2><div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">${res.map((r,i)=>`<div style="width:104px;padding:9px;border-radius:14px;background:#171a36;border:2px solid ${GC[r.g]};box-shadow:0 0 ${r.g*5}px ${GC[r.g]};text-align:center;animation:ppop .35s ${i*.08}s both"><div style="font-size:34px">${petCatalog[r.id].icon}</div><b style="color:${GC[r.g]};font-size:12px">${G[r.g]}</b><div style="font-size:13px">${petCatalog[r.id].name}</div><small>${r.dup?'중복 → +'+r.coin.toLocaleString()+'🪙':'NEW!'}</small></div>`).join('')}</div><button class="primary" style="max-width:240px">확인</button>`;
+ o.onclick=e=>{if(e.target.tagName==='BUTTON'||e.target===o)o.remove()};document.body.appendChild(o)}
+async function pull(cur,n){if(busy)return;busy=true;
+ try{await sb.from('player_stats').update({coins:Math.floor(S.coins),gems:Math.floor(S.gems)}).eq('user_id',currentUser.id);
+  const {data,error}=await sb.rpc('pet_pull',{p_currency:cur,p_count:n});if(error)throw error;
+  const st=await sb.from('player_stats').select('coins,gems').eq('user_id',currentUser.id).maybeSingle();if(st.data){S.coins=st.data.coins;S.gems=st.data.gems}
+  pity=data.pity;const ids=Object.keys(petCatalog),res=[];
+  for(const g of data.grades){let gg=g,pool;while(gg>=0&&!(pool=ids.filter(i=>PG[i]===gg)).length)gg--;
+   const id=pool[Math.floor(Math.random()*pool.length)],dup=S.pets.includes(id);
+   if(dup){S.coins+=DUP[gg]}else{S.pets.push(id);if(!S.equippedPet)S.equippedPet=id}
+   res.push({id,g:gg,dup,coin:DUP[gg]})}
+  S.totalEggs=(S.totalEggs||0)+n;save();try{render()}catch(e){}show(res)
+ }catch(e){toast('실패: '+String(e.message||e).replace(/not enough (coins|gems)/,'재화가 부족해요'))}
+ finally{busy=false;draw()}}
+const _t=window.tab;
+window.tab=async function(t){if(t!=='petgacha')return _t(t);
+ document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='petgacha'));
+ const c=$('content');c.onclick=e=>{const b=e.target.closest('[data-pa]');if(b)pull(b.dataset.pa,+b.dataset.n)};
+ if(currentUser){try{await loadPity()}catch(e){}}draw()};
+const nav=$('nav');if(nav&&!nav.querySelector('[data-tab="petgacha"]'))nav.insertAdjacentHTML('beforeend','<button data-tab="petgacha">🐾 펫 소환</button>');
+})();
+
+</script>
 </body></html>
 <style id="chibi-art-upgrade">
 .tile{position:relative;overflow:hidden;background:linear-gradient(155deg,#30265f,#171633)!important}
