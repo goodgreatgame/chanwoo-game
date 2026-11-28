@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>이찬우 키우기 : 천상의 연대기 & 마이룸 에디션</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -639,7 +640,7 @@ function getPetSVG(petId) {
       <ellipse cx="60" cy="76" rx="12" ry="8" fill="#fbcfe8"/>
     </svg>`
   };
-  return map[petId] || map.fox;
+  return map[petId] || (window.petArtX && petArtX(petId)) || map.fox;
 }
 
 /**
@@ -883,6 +884,78 @@ const PETS_DB = [
   { id: 'unicorn', name: '천상의 유니콘 셀레스티아', grade: '신화', bonusType: 'all', bonusVal: 0.65, desc: '모든 능력치 및 경험치 획득 +65%' }
 ];
 
+/* ===== 확장: 펫 19종(6등급) + 위트 스킬 40종 ===== */
+(function(){
+  const P=['정종훈','김민경','이상미','김길환','백승남','노승룡','엄보용','김영옥','이순갑','허미정'];
+  const C=['#f97316','#ef4444','#facc15','#38bdf8','#34d399','#f59e0b','#fb7185','#c084fc','#a3e635','#f472b6'];
+  const S=[
+  ['정종훈의 칼퇴 슬래시','🏃','퇴근 5분 전의 폭발적 질주!'],['김민경의 매콤급식판','🍛','맵디매운 급식판을 날려 화끈하게!'],['이상미의 상큼 레몬펀치','🍋','새콤한 한 방에 눈이 번쩍!'],['김길환의 길 찾기 레이저','🧭','가장 빠른 길로 정확히 꽂힌다!'],['백승남의 백발백중 젓가락','🥢','반찬도 적도 한 번에 집는다!'],['노승룡의 승룡권','🐉','올려치는 한 방, 하늘까지 간다!'],['엄보용의 엄청난 보온병','☕','뜨끈한 보온병 후려치기 + 체력 회복!',.1],['김영옥의 영롱한 옥구슬','🔮','영롱한 빛이 적을 강타!'],['이순갑의 순간 갑툭튀','👻','갑자기 나타나 깜짝 공격!'],['허미정의 허밍 미사일','🎵','흥얼거림이 미사일이 되어 날아간다!'],
+  ['정종훈의 종소리 회식공지','🔔','회식 공지 한마디에 모두 얼어붙는다!'],['김민경의 매콤주먹','👊','불닭 소스를 바른 주먹질!'],['이상미의 상미 스무디','🥤','시원하게 갈아버리고 체력 회복!',.12],['김길환의 길바닥 슬라이딩','🛹','끝없이 미끄러지는 돌진!'],['백승남의 승남 승전가','📯','승리의 나팔이 울려 퍼진다!'],['노승룡의 승천 콤보','🌠','연속 콤보로 하늘까지 띄운다!'],['엄보용의 보용 보리차 폭포','🫖','보리차 폭포 + 체력 회복!',.15],['김영옥의 옥수수 수류탄','🌽','알알이 터지는 옥수수 폭죽!'],['이순갑의 순식간에 갑옷파괴','🛡️','순식간에 갑옷을 박살낸다!'],['허미정의 미정 미소 폭격','😊','미소 한 번에 적이 휘청!'],
+  ['정종훈의 종횡무진 훈련소','🏋️','종횡무진 훈련으로 단련된 연타!'],['김민경의 민경 마라 폭풍','🌶️','마라탕 불바다가 몰아친다!'],['이상미의 상상초월 미소','✨','상상 이상의 눈부심!'],['김길환의 환상의 길막기','🚧','환상적인 길막기로 적을 가둔다!'],['백승남의 남극 백곰 박치기','🐻','시원~한 박치기!'],['노승룡의 승리의 룡 폭격','🐲','용의 포효로 전장을 뒤흔든다!'],['엄보용의 보용 보양식 대잔치','🍲','든든한 보양식으로 체력 대회복!',.25],['김영옥의 영옥 영롱 폭죽','🎆','밤하늘을 수놓는 대폭죽!'],['이순갑의 순갑 순삭 콤보','⚡','눈 깜짝할 새 순삭!'],['허미정의 허를 찌르는 한 방','🪄','허를 찔러 압도적인 일격!'],
+  ['정종훈의 종결자 퇴근버튼','⏰','누르는 순간 끝나는 종결 스킬!'],['김민경의 민경 대마왕 불닭폭발','🌋','전설의 불닭 대폭발!'],['이상미의 상미 레전드 레몬에이드','🍹','시원새콤 회복 폭발!',.3],['김길환의 환승역 차원이동','🚇','환승 한 번에 차원을 넘는다!'],['백승남의 승남 대백과 폭풍','📚','지식의 폭풍이 몰아친다!'],['노승룡의 룡의 승천 대폭발','🌈','승룡권의 최종 진화형!'],['엄보용의 보용 용암 보온병','🌡️','마그마급 보온병 대폭발!'],['김영옥의 옥황상제 심판','⚖️','하늘의 심판이 내려온다!'],['이순갑의 순간이동 일격필살','🌀','순간이동 후 일격필살!'],['허미정의 허밍 대합창','🎤','모두의 허밍이 하나 되어 폭발!']
+  ];
+  S.forEach((s,r)=>{const m=+(2+r*0.19).toFixed(2),p=r%10;
+    SKILLS_DB.push({id:'k'+r,name:s[0],icon:s[1],mp:15+Math.round(r*1.4),cd:3+Math.floor(r/4),mult:m,color:C[p],heal:s[3]||undefined,
+      desc:`${s[2]} (${Math.round(m*100)}% 피해${s[3]?` + 최대HP ${Math.round(s[3]*100)}% 회복`:''})`});});
+
+  const A=(c,e,x,s)=>({c,e,x,s});
+  const NEW=[
+   ['slime','말랑 슬라임 뭉이','일반',{hp:.15},'k6',A('#4ade80','none','💧')],
+   ['bunny','솜뭉치 토끼 몽실','일반',{gold:.12,exp:.05},'k8',A('#fce7f3','bunny','🥕','#f9a8d4')],
+   ['cat','졸린 고양이 냥콩','일반',{crit:.05,atk:.06},'k9',A('#cbd5e1','cat','💤')],
+   ['penguin','뒤뚱 펭귄 뚜비','희귀',{hp:.2,cdr:.05},'k12',A('#1e3a8a','round','🧊','#93c5fd')],
+   ['panda','대나무 판다 반달','희귀',{exp:.25,hp:.1},'k4',A('#f1f5f9','round','🎋','#0f172a')],
+   ['wolf','은빛 늑대 실버팡','희귀',{atk:.2,crit:.04},'k5',A('#94a3b8','cat','🌙','#e2e8f0')],
+   ['kumiho','구미호 하늘','영웅',{crit:.12,critDmg:.2},'k19',A('#fda4af','cat','🦊','#fff1f2')],
+   ['turtle','현자 거북 만수','영웅',{hp:.4,gold:.2},'k16',A('#65a30d','round','🐢','#d9f99d')],
+   ['whale','구름 고래 포포','전설',{exp:.4,hp:.3},'k26',A('#60a5fa','round','☁️','#dbeafe')],
+   ['tambi','최담비 (마법 담당)','전설',{atk:.3,crit:.1,cdr:.08},'k22',null,'최담비'],
+   ['yujeong','조유정 (키가 작은 거인)','전설',{critDmg:.6,crit:.12,cdr:.1},'k28',null,'조유정'],
+   ['phoenix','불멸의 불사조 라이저','신화',{atk:.5,hp:.4,gold:.3},'k31',A('#f97316','horn','🔥','#fde047')],
+   ['galaxycat','은하 고양이 코스모','신화',{all:.5,cdr:.1},'k37',A('#4c1d95','cat','🌌','#c4b5fd')],
+   ['ascdragon','초월의 용 에테르노','초월',{all:.9,atk:.4,crit:.15,critDmg:.8,hp:.5,cdr:.15},'k39',null,'초월의 용'],
+   ['sunfish','시공의 개복치 무한','초월',{all:.7,hp:.9,gold:.5,cdr:.12},'k30',A('#bae6fd','round','♾️','#38bdf8')]
+  ];
+  const OLD={fox:[{atk:.25},'k11'],owl:[{gold:.4},'k14'],dragon:[{crit:.2,critDmg:.5},'k25'],unicorn:[{all:.65},'k32']};
+  PETS_DB.forEach(p=>{const o=OLD[p.id];if(o){p.st=o[0];p.skill=o[1];}});
+  NEW.forEach(n=>PETS_DB.push({id:n[0],name:n[1],grade:n[2],st:n[3],skill:n[4],art:n[5],short:n[6]}));
+
+  const sk=(c,y)=>`<circle cx="50" cy="56" r="3.6" fill="#1e1b4b"/><circle cx="70" cy="56" r="3.6" fill="#1e1b4b"/><circle cx="43" cy="63" r="4" fill="#fda4af" opacity=".7"/><circle cx="77" cy="63" r="4" fill="#fda4af" opacity=".7"/><path d="M54 66 Q60 72 66 66" stroke="#9f1239" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  window.PET_SPECIAL={
+   tambi:`<svg viewBox="0 0 120 120" class="w-full h-full"><ellipse cx="60" cy="108" rx="26" ry="5" fill="rgba(0,0,0,.25)"/><path d="M30 60 Q20 100 40 104 L46 70Z M90 60 Q100 100 80 104 L74 70Z" fill="#a78bfa"/><rect x="42" y="78" width="36" height="28" rx="12" fill="#6366f1"/><circle cx="60" cy="52" r="28" fill="#fde2c8"/><path d="M32 52 Q32 20 60 22 Q88 20 88 52 Q76 36 60 38 Q44 36 32 52Z" fill="#c4b5fd"/>${sk()}<text x="94" y="24" font-size="22" text-anchor="middle">🌟</text></svg>`,
+   yujeong:`<svg viewBox="0 0 120 120" class="w-full h-full"><ellipse cx="60" cy="108" rx="22" ry="4" fill="rgba(0,0,0,.25)"/><g transform="translate(17,38) scale(.72)"><rect x="42" y="78" width="36" height="28" rx="12" fill="#f43f5e"/><circle cx="60" cy="52" r="28" fill="#fde2c8"/><path d="M31 56 Q28 18 60 20 Q92 18 89 56 Q80 34 60 36 Q40 34 31 56Z" fill="#92400e"/><path d="M52 24 L60 14 L68 24Z" fill="#facc15"/>${sk()}</g><text x="96" y="28" font-size="22" text-anchor="middle">💪</text></svg>`,
+   ascdragon:`<svg viewBox="0 0 120 120" class="w-full h-full"><defs><radialGradient id="adg"><stop offset="0" stop-color="#e0f2fe"/><stop offset=".5" stop-color="#22d3ee"/><stop offset="1" stop-color="#6d28d9"/></radialGradient></defs><circle cx="60" cy="62" r="54" fill="rgba(167,139,250,.28)"/><path d="M32 60 L4 28 L18 70 L8 84 L36 78Z" fill="#7c3aed" stroke="#c4b5fd" stroke-width="1.5"/><path d="M88 60 L116 28 L102 70 L112 84 L84 78Z" fill="#7c3aed" stroke="#c4b5fd" stroke-width="1.5"/><circle cx="60" cy="66" r="30" fill="url(#adg)" stroke="#fff" stroke-width="2"/><polygon points="40,42 30,12 54,34" fill="#fde047"/><polygon points="80,42 90,12 66,34" fill="#fde047"/><circle cx="49" cy="62" r="5" fill="#fff"/><circle cx="49" cy="62" r="2.4" fill="#4c1d95"/><circle cx="71" cy="62" r="5" fill="#fff"/><circle cx="71" cy="62" r="2.4" fill="#4c1d95"/><path d="M48 78 Q60 88 72 78" stroke="#312e81" stroke-width="3" fill="none"/><text x="60" y="12" font-size="13" text-anchor="middle">✨</text></svg>`
+  };
+  window.petArtX=function(id){
+    if(PET_SPECIAL[id])return PET_SPECIAL[id];
+    const p=PETS_DB.find(x=>x.id===id);if(!p||!p.art)return '';const a=p.art,c=a.c,e=a.e,s=a.s||'#fff';
+    const ear=e==='cat'?`<polygon points="34,44 28,16 54,34" fill="${c}" stroke="${s}" stroke-width="1.5"/><polygon points="86,44 92,16 66,34" fill="${c}" stroke="${s}" stroke-width="1.5"/>`
+      :e==='bunny'?`<ellipse cx="44" cy="22" rx="8" ry="20" fill="${c}" stroke="${s}" stroke-width="1.5"/><ellipse cx="76" cy="22" rx="8" ry="20" fill="${c}" stroke="${s}" stroke-width="1.5"/>`
+      :e==='round'?`<circle cx="36" cy="40" r="10" fill="${c}" stroke="${s}" stroke-width="1.5"/><circle cx="84" cy="40" r="10" fill="${c}" stroke="${s}" stroke-width="1.5"/>`
+      :e==='horn'?`<polygon points="42,40 36,12 54,32" fill="#fde047"/><polygon points="78,40 84,12 66,32" fill="#fde047"/>`:'';
+    return `<svg viewBox="0 0 120 120" class="w-full h-full">${ear}<circle cx="60" cy="66" r="34" fill="${c}" stroke="${s}" stroke-width="2.5"/><ellipse cx="60" cy="78" rx="18" ry="11" fill="rgba(255,255,255,.5)"/><circle cx="47" cy="60" r="5" fill="#1e1b4b"/><circle cx="73" cy="60" r="5" fill="#1e1b4b"/><circle cx="48.5" cy="58.5" r="1.7" fill="#fff"/><circle cx="74.5" cy="58.5" r="1.7" fill="#fff"/><path d="M52 76 Q60 83 68 76" stroke="#1e1b4b" stroke-width="2.5" fill="none" stroke-linecap="round"/><text x="98" y="26" font-size="24" text-anchor="middle">${a.x}</text></svg>`;
+  };
+  const GC={'일반':'#94a3b8','희귀':'#38bdf8','영웅':'#a78bfa','전설':'#fbbf24','신화':'#f472b6','초월':'#22d3ee'};
+  const GO=['초월','신화','전설','영웅','희귀','일반'],GW={'일반':30,'희귀':25,'영웅':18,'전설':12,'신화':8,'초월':3};
+  const LB={atk:'공격력',gold:'골드',exp:'경험치',hp:'체력',crit:'치명타 확률',critDmg:'치명타 피해',cdr:'쿨타임 감소',all:'공격·골드·경험치'};
+  window.petB=function(k){const p=getPetObj();if(!p||!p.st)return 0;return (p.st[k]||0)+((k==='atk'||k==='gold'||k==='exp')?(p.st.all||0):0);};
+  window.petGradeColor=g=>GC[g]||'#94a3b8';
+  window.petDescX=function(p){
+    const chips=Object.entries(p.st).map(([k,v])=>`<span style="background:#0f172a;border:1px solid #334155;border-radius:9999px;padding:1px 6px;font-size:10px;color:#a5f3fc">${LB[k]} +${Math.round(v*100)}%</span>`).join(' ');
+    const s=SKILLS_DB.find(x=>x.id===p.skill);
+    return `<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">${chips}</div>`+(s?`<div style="font-size:11px;color:${s.color};margin-top:3px">${s.icon} 전용: ${s.name}</div>`:'');
+  };
+  window.petSorted=()=>PETS_DB.slice().sort((a,b)=>GO.indexOf(a.grade)-GO.indexOf(b.grade));
+  window.rollPet=function(){
+    let t=0;GO.forEach(g=>t+=GW[g]);let r=Math.random()*t,g='일반';
+    for(const x of GO){if((r-=GW[x])<0){g=x;break;}}
+    const pool=PETS_DB.filter(p=>p.grade===g);return pool[Math.floor(Math.random()*pool.length)];
+  };
+  window.unlockPetSkill=function(p){
+    if(p&&p.skill&&state.skills[p.skill]&&!state.skills[p.skill].unlocked){state.skills[p.skill].unlocked=true;showToast('⚡ 펫 전용 스킬 해금: '+SKILLS_DB.find(x=>x.id===p.skill).name);}
+  };
+})();
+
 const STAGES_DB = [
   { stage: 1, name: '푸른 초원 슬라임 숲', monster: 'slime', mName: '킹 슬라임', hp: 350, atk: 18, gold: 120, exp: 45, isBoss: false },
   { stage: 2, name: '고블린 약탈자 협곡', monster: 'goblin', mName: '고블린 족장', hp: 1200, atk: 55, gold: 420, exp: 140, isBoss: false },
@@ -985,6 +1058,7 @@ const DEFAULT_STATE = {
   lastSaveTime: Date.now()
 };
 
+SKILLS_DB.forEach(s => { if (!DEFAULT_STATE.skills[s.id]) DEFAULT_STATE.skills[s.id] = { unlocked: false, level: 1 }; });
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let activeTab = 'room'; // 개편된 방꾸미기 시스템을 즉시 확인할 수 있도록 초기 탭 설정 (13개 탭 자유 전환)
 let lastRenderedEvoStage = 1;
@@ -1104,20 +1178,18 @@ function getPlayerStats() {
   const ib = getInteriorBonuses();
 
   let atkMult = evo.mult * (1 + ib.atk / 100);
-  if (pet && (pet.bonusType === 'atk' || pet.bonusType === 'all')) atkMult *= (1 + pet.bonusVal);
+  atkMult *= (1 + petB('atk'));
 
   const baseAtk = (state.level * 14) + (state.stats.str * 18) + wep.atk;
   const atk = Math.floor(baseAtk * atkMult);
 
-  const hpMult = (1 + (evo.stage - 1) * 0.35) * (1 + ib.hp / 100);
+  const hpMult = (1 + (evo.stage - 1) * 0.35) * (1 + ib.hp / 100) * (1 + petB('hp'));
   const maxHp = Math.floor((300 + state.level * 65 + state.stats.hpLv * 95) * hpMult);
 
   let critRate = Math.min(0.95, 0.08 + state.stats.critLv * 0.015 + (ib.critRate / 100));
   let critDmg = 1.6 + state.stats.critLv * 0.05 + (ib.critDmg / 100);
-  if (pet && pet.bonusType === 'crit') {
-    critRate = Math.min(0.98, critRate + pet.bonusVal);
-    critDmg += 0.5;
-  }
+  critRate = Math.min(0.98, critRate + petB('crit'));
+  critDmg += petB('critDmg');
 
   const combatPower = Math.floor(
     atk * (1 + critRate * (critDmg - 1)) * (1 + ib.bossDmg / 200) + maxHp * 0.35
@@ -1130,7 +1202,7 @@ function getGoldPerSec() {
   const pet = getPetObj();
   const ib = getInteriorBonuses();
   let gps = (8 + state.stats.gpsLv * 14 + state.level * 5) * evo.mult * (1 + ib.gps / 100);
-  if (pet && (pet.bonusType === 'gold' || pet.bonusType === 'all')) gps *= (1 + pet.bonusVal);
+  gps *= (1 + petB('gold'));
   return Math.floor(gps);
 }
 
@@ -1149,7 +1221,7 @@ function gainExp(amount) {
   const pet = getPetObj();
   const ib = getInteriorBonuses();
   let mult = 1 + (ib.exp / 100);
-  if (pet && pet.bonusType === 'all') mult += pet.bonusVal;
+  mult += petB('exp');
 
   state.exp += Math.floor(amount * mult);
   let leveledUp = false;
@@ -1403,7 +1475,7 @@ function useActiveSkill(skillId) {
   const ib = getInteriorBonuses();
   battleState.playerMp -= skill.mp;
   // 인테리어 스킬 쿨타임 감소 적용
-  const reducedCd = Math.max(1, Math.round(skill.cd * (1 - ib.cdr / 100)));
+  const reducedCd = Math.max(1, Math.round(skill.cd * (1 - Math.min(0.75, ib.cdr / 100 + petB('cdr')))));
   battleState.cooldowns[skillId] = reducedCd;
   state.counters.skillsUsed++;
 
@@ -1630,7 +1702,7 @@ function updateStageVisuals() {
   const pet = getPetObj();
   if (pet) {
     document.getElementById('stagePetSvg').innerHTML = getPetSVG(pet.id);
-    document.getElementById('stagePetName').textContent = pet.name.split(' ')[0];
+    document.getElementById('stagePetName').textContent = (pet.short || pet.name.split(' ')[0]);
   } else {
     document.getElementById('stagePetSvg').innerHTML = '';
     document.getElementById('stagePetName').textContent = '펫 미장착';
@@ -1822,6 +1894,7 @@ function renderActiveTab() {
 
   // 4. 펫 탭
   else if (activeTab === 'pet') {
+    PETS_DB.forEach(p => { if (state.ownedPets.includes(p.id)) unlockPetSkill(p); });
     root.innerHTML = `
       <div class="flex flex-col gap-3">
         <div class="flex justify-between items-center border-b border-purple-500/25 pb-2">
@@ -1829,7 +1902,7 @@ function renderActiveTab() {
           <button onclick="switchTab('gacha')" class="btn-game px-3 py-1 rounded-xl bg-pink-600 text-xs font-bold">펫 소환하러 가기</button>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          ${PETS_DB.map(pet => {
+          ${petSorted().map(pet => {
             const owned = state.ownedPets.includes(pet.id);
             const equipped = state.equippedPet === pet.id;
             return `
@@ -1838,9 +1911,9 @@ function renderActiveTab() {
                   ${getPetSVG(pet.id)}
                 </div>
                 <div class="flex-1">
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-900 text-purple-200 font-bold">${pet.grade}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold" style="background:#0f172a;border:1px solid ${petGradeColor(pet.grade)};color:${petGradeColor(pet.grade)}">${pet.grade}</span>
                   <div class="font-game text-base text-white mt-0.5">${pet.name}</div>
-                  <div class="text-xs text-cyan-300 font-bold">${pet.desc}</div>
+                  ${petDescX(pet)}
                   <div class="mt-2">
                     ${owned ? `
                       <button onclick="equipPet('${pet.id}')" class="btn-game w-full py-1.5 rounded-xl ${equipped ? 'bg-cyan-500 text-slate-950' : 'bg-indigo-600 text-white'} font-bold text-xs">
@@ -2568,6 +2641,7 @@ function equipWeapon(id) {
 
 function equipPet(id) {
   state.equippedPet = id;
+  unlockPetSkill(getPetObj());
   sfx.sfxUpgrade();
   updateStageVisuals();
   updateTopHUD();
@@ -2606,12 +2680,13 @@ function pullGacha(kind) {
   } else if (kind === 'pet') {
     if (state.gem < 80) return showToast('💎 다이아가 부족합니다! (80개 필요)');
     state.gem -= 80;
-    const pet = PETS_DB[Math.floor(Math.random() * PETS_DB.length)];
+    const pet = rollPet();
     if (!state.ownedPets.includes(pet.id)) {
       state.ownedPets.push(pet.id);
+      unlockPetSkill(pet);
       if (!state.equippedPet) state.equippedPet = pet.id;
       updateStageVisuals();
-      openNotice('🐾 신수 펫 소환 성공!', `[${pet.grade}] ${pet.name}이(가) 합류했습니다!\n효과: ${pet.desc}`);
+      openNotice('🐾 신수 펫 소환 성공!', `[${pet.grade}] ${pet.name}이(가) 합류했습니다!\n${Object.entries(pet.st).map(([k, v]) => k + ' +' + Math.round(v * 100) + '%').join(' / ')}`);
     } else {
       state.ether += 25;
       openNotice('🔮 펫 영혼 공명', `이미 보유한 [${pet.name}]과 공명하여\n에테르 결정 +25개를 획득했습니다!`);
@@ -2867,6 +2942,7 @@ function AX() {
   if (!Number.isInteger(a.equippedSkin) || !a.ownedSkins.includes(a.equippedSkin)) a.equippedSkin = 0;
   if (typeof a.skinShards !== 'number') a.skinShards = 30;
   if (!Array.isArray(a.codexClaimed)) a.codexClaimed = [];
+  if (typeof a.skinPulls !== 'number') a.skinPulls = 0;
   if (typeof a.rebirths !== 'number') a.rebirths = 0;
   if (typeof a.rebirthShards !== 'number') a.rebirthShards = 0;
   if (typeof a.transcend !== 'number') a.transcend = 0;
@@ -2981,7 +3057,7 @@ function renderSkin() {
     const claimed = a.codexClaimed.includes(n), ready = own >= n && !claimed;
     return `<button onclick="AXA.claimCodex(${n})" ${ready ? '' : 'disabled'} class="${BTN} ${claimed ? 'bg-slate-700' : ready ? 'bg-amber-600' : 'bg-slate-800 opacity-70'} !px-2 !py-1">${label} → 💎${gem}${claimed ? ' ✔' : ''}</button>`;
   }).join('');
-  return `<div class="flex flex-col gap-2.5">${head('👑 스킨 도감', '스킨을 장착하면 캐릭터 모습과 공격력이 바뀌고, 보유 스킨 1종당 공격력이 +0.2% 오릅니다.')}
+  return `<div class="flex flex-col gap-2.5">${head('👑 스킨 도감', '스킨을 장착하면 캐릭터 모습과 공격력이 바뀌고, 보유 스킨 1종당 공격력이 +0.2% 오릅니다. 스킨은 뽑기 탭의 스킨 소환이나 조각으로 얻어요.')}
     <div class="flex flex-wrap gap-1.5">${pill('🧩 스킨 조각 ' + nf(a.skinShards))}${pill('💎 보석 ' + nf(state.gem))}${pill('📖 도감 ' + own + '/' + SKINS.length)}</div>
     <div class="${CARD}"><div class="flex items-center justify-between gap-2"><div><b class="text-xs">🎁 조각 상자</b><p class="text-[10px] text-slate-400">💎 40개로 스킨 조각 10개를 얻어요. 조각은 레이드·출석 보상으로도 얻을 수 있어요.</p></div><button onclick="AXA.buyShards()" class="${BTN} bg-cyan-700 shrink-0">구매</button></div></div>
     <div class="${CARD}"><b class="text-xs">📖 도감 달성 보상</b><div class="flex flex-wrap gap-1.5 mt-1.5">${codex}</div></div>
@@ -3081,6 +3157,32 @@ function renderDaily() {
     <button onclick="AXA.startTutorial()" class="${BTN} bg-slate-800">📘 튜토리얼 다시 보기</button></div>`;
 }
 
+
+/* ---------------------------- 스킨 소환(뽑기) ---------------------------- */
+const SKIN_RATES = [['일반', 30], ['고급', 25], ['희귀', 20], ['영웅', 13], ['전설', 7], ['신화', 3.5], ['초월', 1.5]];
+const SKIN_PITY = 50;
+function rollSkinIndex(guaranteeHigh) {
+  const allowed = SKIN_RATES.filter(([r]) => !guaranteeHigh || RARITY_ORDER.indexOf(r) >= RARITY_ORDER.indexOf('전설'));
+  for (let tries = 0; tries < 20; tries++) {
+    const total = allowed.reduce((s, x) => s + x[1], 0);
+    let roll = Math.random() * total, rarity = allowed[0][0];
+    for (const [r, w] of allowed) { roll -= w; if (roll <= 0) { rarity = r; break; } }
+    const pool = SKINS.map((s, i) => ({ s, i })).filter(({ s, i }) => i > 0 && s.rarity === rarity);
+    if (pool.length) return pool[Math.floor(Math.random() * pool.length)].i;
+  }
+  return 1;
+}
+function skinGachaCard() {
+  const a = AX(), left = SKIN_PITY - ((a.skinPulls || 0) % SKIN_PITY);
+  return `<div class="bg-gradient-to-br from-fuchsia-950 to-slate-900 border border-fuchsia-400/40 rounded-2xl p-3.5 flex flex-col items-center text-center gap-2">
+    <div class="text-4xl">👑</div><div class="font-game text-base text-fuchsia-300">스킨 소환</div>
+    <p class="text-[11px] text-slate-300">36종의 스킨 중 하나를 소환해요. 중복은 스킨 조각으로 바뀌고, ${left}회 안에 전설 이상이 확정이에요.</p>
+    <div class="grid grid-cols-2 gap-1.5 w-full mt-auto">
+      <button onclick="AXA.pullSkin(1)" class="btn-game py-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white font-bold text-xs">💎 60 · 1회</button>
+      <button onclick="AXA.pullSkin(10)" class="btn-game py-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold text-xs">💎 540 · 10회</button>
+    </div></div>`;
+}
+
 /* ---------------------------- 탭 등록 ---------------------------- */
 const AXTABS = { skin: renderSkin, rebirth: renderRebirth, raid: renderRaid, titles: renderTitles, daily: renderDaily };
 TABS.push({ id: 'skin', label: '스킨', icon: '👑' }, { id: 'rebirth', label: '환생', icon: '♻️' }, { id: 'raid', label: '레이드', icon: '👹' }, { id: 'titles', label: '칭호', icon: '🏷️' }, { id: 'daily', label: '출석', icon: '🎁' });
@@ -3088,11 +3190,32 @@ const _renderActiveTab = renderActiveTab;
 renderActiveTab = function () {
   if (AXTABS[activeTab]) { document.getElementById('tabContent').innerHTML = AXTABS[activeTab](); return; }
   _renderActiveTab();
+  if (activeTab === 'gacha') {
+    const g = document.querySelector('#tabContent .grid');
+    if (g) { g.classList.remove('sm:grid-cols-3'); g.classList.add('sm:grid-cols-2'); g.insertAdjacentHTML('beforeend', skinGachaCard()); }
+  }
 };
 
 /* ---------------------------- 동작 ---------------------------- */
 const AXA = window.AXA = {
   skinFilter(f) { skinFilter = f; renderActiveTab(); },
+  pullSkin(n) {
+    const a = AX(), cost = n === 10 ? 540 : 60;
+    if (state.gem < cost) return showToast(`💎 보석이 부족해요. (${cost}개 필요)`);
+    state.gem -= cost; a.skinPulls = a.skinPulls || 0;
+    const lines = []; let best = 0;
+    for (let k = 0; k < n; k++) {
+      a.skinPulls++;
+      const i = rollSkinIndex(a.skinPulls % SKIN_PITY === 0), s = SKINS[i];
+      best = Math.max(best, RARITY_ORDER.indexOf(s.rarity));
+      if (a.ownedSkins.includes(i)) { const back = Math.floor(s.cost / 2); a.skinShards += back; lines.push(`[${s.rarity}] ${s.name} (중복 → 🧩+${back})`); }
+      else { a.ownedSkins.push(i); lines.push(`✨ NEW [${s.rarity}] ${s.name}`); }
+    }
+    state.counters.gachas = (state.counters.gachas || 0) + n;
+    checkTitles(false);
+    try { sfx.sfxEvolve && best >= 4 && sfx.sfxEvolve(); } catch (e) { }
+    openNotice('👑 스킨 소환 결과', lines.join('\n')); refreshVisuals();
+  },
   buyShards() {
     if (state.gem < 40) return showToast('💎 보석이 부족해요.');
     state.gem -= 40; AX().skinShards += 10; showToast('🧩 스킨 조각 +10'); refreshVisuals();
@@ -3137,7 +3260,7 @@ const AXA = window.AXA = {
     const a = AX();
     if (a.raidTokens < 1) return showToast('🎟️ 레이드 토큰이 부족해요.');
     const st = raidStats(i), res = simulate(st.hp, st.atk, 25, true);
-    a.raidTokens--;
+    a.raidTokens--; if (a.raidTokens < MAX_TOKENS - 0 && a.tokenTs > Date.now()) a.tokenTs = Date.now();
     let msg;
     if (res.win) {
       const first = !a.raidDefeated.includes(i);
@@ -3259,6 +3382,342 @@ window.addEventListener('load', () => {
   }, 1200);
 });
 setInterval(() => { try { checkTitles(false); } catch (e) { } }, 6000);
+})();
+
+</script>
+<script id="chanwoo-online">
+/* ============================================================================
+ * 온라인 모듈 (구버전의 Supabase 기능 복구)
+ * 계정 로그인 / 클라우드 저장 / 실시간 온라인 랭킹 / 친구 / 개발자 패널
+ * 구버전과 같은 Supabase 프로젝트·테이블(player_stats, profiles, friend_requests,
+ * developer_roles)을 그대로 사용합니다.
+ * 클라우드 저장은 player_stats.game_data 안의 chanwooV3 키에만 쓰기 때문에
+ * 구버전 저장 데이터를 덮어쓰지 않습니다.
+ * ========================================================================== */
+(() => {
+'use strict';
+const SUPABASE_URL = 'https://rrcljqlwpibptfpuccks.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_aS3ibvBuljSwNoL7tn6xfQ_xa2qaDvV';
+const sb = (window.supabase && window.supabase.createClient) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) : null;
+
+let user = null, devAuth = false, hydrating = false, cloudBase = null, lastSync = 0, syncing = false, rankChannel = null;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nf = n => Math.floor(Number(n) || 0).toLocaleString('ko-KR');
+const CARD = 'bg-slate-900/80 border border-slate-700 rounded-xl p-2.5';
+const BTN = 'btn-game px-3 py-1.5 rounded-xl font-bold text-xs';
+const INPUT = 'w-full bg-slate-900 border border-purple-500/40 rounded-xl px-3 py-2 text-white text-xs focus:outline-none';
+
+/* ---------------------------- 클라우드 저장/불러오기 ---------------------------- */
+function progressScore(s) { return (Number(s && s.level) || 0) + ((s && s.ax && Number(s.ax.rebirths)) || 0) * 1000 + ((s && s.ax && Number(s.ax.transcend)) || 0) * 5000; }
+
+function applyCloudState(cs) {
+  state = {
+    ...DEFAULT_STATE, ...cs,
+    stats: { ...DEFAULT_STATE.stats, ...(cs.stats || {}) },
+    skills: { ...DEFAULT_STATE.skills, ...(cs.skills || {}) },
+    placedFurniture: { ...DEFAULT_STATE.placedFurniture, ...(cs.placedFurniture || {}) },
+    potions: { ...DEFAULT_STATE.potions, ...(cs.potions || {}) },
+    counters: { ...DEFAULT_STATE.counters, ...(cs.counters || {}) }
+  };
+  try { lastRenderedEvoStage = getCurrentEvolution().stage; } catch (e) { }
+  try { setupDungeonEnemy(state.dungeonStage); } catch (e) { }
+  try { updateStageVisuals(); } catch (e) { }
+  try { updateTopHUD(); } catch (e) { }
+  try { renderTabBar(); renderActiveTab(); } catch (e) { }
+  try { localStorage.setItem('chanwoo_rpg_v3', JSON.stringify(state)); } catch (e) { }
+}
+
+async function syncCloud(manual) {
+  if (!sb || !user || hydrating || syncing) return false;
+  syncing = true;
+  try {
+    state.lastSaveTime = Date.now();
+    const p = getPlayerStats();
+    const gd = Object.assign({}, cloudBase || {});
+    gd.chanwooV3 = { version: 3, savedAt: Date.now(), state: JSON.parse(JSON.stringify(state)) };
+    const base = { user_id: user.id, level: state.level, coins: Math.floor(state.gold), gems: Math.floor(state.gem), xp: Math.floor(state.exp), attack: p.atk, hp: p.maxHp, updated_at: new Date().toISOString() };
+    let { error } = await sb.from('player_stats').upsert({ ...base, game_data: gd }, { onConflict: 'user_id' });
+    if (error && /game_data|column/i.test(error.message)) {
+      const fb = await sb.from('player_stats').upsert(base, { onConflict: 'user_id' });
+      error = fb.error;
+    } else if (!error) cloudBase = gd;
+    if (error) { console.warn('Cloud save failed', error.message); if (manual) showToast('클라우드 저장 오류: ' + error.message); return false; }
+    lastSync = Date.now();
+    return true;
+  } catch (e) {
+    console.warn('Cloud save failed', e);
+    if (manual) showToast('클라우드 연결 오류: ' + (e.message || e));
+    return false;
+  } finally { syncing = false; }
+}
+
+async function fetchCloudRow() {
+  let r = await sb.from('player_stats').select('game_data,updated_at').eq('user_id', user.id).maybeSingle();
+  if (r.error && /game_data|column/i.test(r.error.message)) r = await sb.from('player_stats').select('updated_at').eq('user_id', user.id).maybeSingle();
+  return r;
+}
+
+async function loadCloud(force) {
+  if (!sb || !user) return;
+  hydrating = true;
+  try {
+    const pendingName = localStorage.getItem('chanwooPendingUsername');
+    if (pendingName) {
+      const up = await sb.from('profiles').update({ username: pendingName }).eq('id', user.id);
+      if (!up.error) localStorage.removeItem('chanwooPendingUsername');
+    }
+    localStorage.removeItem('chanwooPendingNewAccount');
+    const { data, error } = await fetchCloudRow();
+    if (error) { console.warn('Cloud load failed', error.message); showToast('클라우드 불러오기 오류: ' + error.message); return; }
+    cloudBase = (data && data.game_data && typeof data.game_data === 'object') ? data.game_data : {};
+    const c = cloudBase.chanwooV3;
+    if (c && c.state) {
+      const cs = c.state, cloudScore = progressScore(cs), localScore = progressScore(state);
+      const useCloud = force || cloudScore > localScore || (cloudScore === localScore && (cs.lastSaveTime || 0) > (state.lastSaveTime || 0) + 2000);
+      if (useCloud) { applyCloudState(cs); showToast('☁️ 클라우드 저장 데이터를 불러왔어요!'); }
+      else if (localScore > cloudScore) { hydrating = false; await syncCloud(false); showToast('☁️ 이 기기의 진행 상황을 클라우드에 저장했어요.'); }
+    } else {
+      hydrating = false; await syncCloud(false); showToast('☁️ 새 클라우드 저장 데이터를 만들었어요.');
+    }
+  } catch (e) { console.warn('Cloud load failed', e); }
+  finally { hydrating = false; subscribeRanking(); }
+}
+
+/* saveGame 에 연결: 로그인 상태면 30초에 한 번씩 클라우드로 자동 저장 */
+const _saveGame = saveGame;
+saveGame = function () {
+  _saveGame();
+  if (user && !hydrating && Date.now() - lastSync > 30000) syncCloud(false);
+};
+
+/* ---------------------------- 계정 ---------------------------- */
+async function refreshDeveloperRole() {
+  devAuth = false;
+  if (!sb || !user) return false;
+  try {
+    const { data, error } = await sb.from('developer_roles').select('role').eq('user_id', user.id).eq('role', 'developer').maybeSingle();
+    if (!error) devAuth = !!data;
+  } catch (e) { devAuth = false; }
+  return devAuth;
+}
+function updateAccountButton() {
+  const b = document.getElementById('axAccountBtn');
+  if (b) b.textContent = user ? '👤 ' + String(user.email || '로그인됨').split('@')[0].slice(0, 8) : '👤 로그인';
+}
+function ensureModal() {
+  let m = document.getElementById('axAccountModal');
+  if (m) return m;
+  m = document.createElement('div');
+  m.id = 'axAccountModal';
+  m.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-3';
+  m.innerHTML = '<div class="glass-panel w-full max-w-md rounded-2xl p-4 flex flex-col gap-3 border border-purple-400/40 max-h-[90vh] overflow-y-auto"><div class="flex justify-between items-center border-b border-slate-700 pb-2"><h2 id="axAccTitle" class="font-game text-lg text-cyan-300">👤 계정</h2><button onclick="AXO.closeAccount()" class="w-8 h-8 rounded-full bg-slate-800 text-white font-bold">✕</button></div><div id="axAccBody" class="flex flex-col gap-2 text-xs"></div></div>';
+  m.addEventListener('click', e => { if (e.target === m) AXO.closeAccount(); });
+  document.body.appendChild(m);
+  return m;
+}
+function renderAccount() {
+  const body = document.getElementById('axAccBody'); if (!body) return;
+  if (!sb) { body.innerHTML = '<p class="text-slate-300">온라인 기능을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</p>'; return; }
+  if (user) {
+    body.innerHTML = `<p>로그인 중: <b>${esc(user.email || '')}</b></p>
+      <p class="text-[11px] text-slate-400">게임 진행 데이터가 이 계정에 저장돼요. 로그인 중에는 30초마다 자동 저장돼요.</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="AXO.saveNow()" class="${BTN} bg-emerald-600">☁️ 지금 저장</button>
+        <button onclick="AXO.loadNow()" class="${BTN} bg-amber-600">⬇️ 클라우드에서 불러오기</button>
+        <button onclick="AXO.test()" class="${BTN} bg-slate-700">연동 테스트</button>
+        <button onclick="AXO.logout()" class="${BTN} bg-rose-800">로그아웃</button>
+      </div>
+      ${devAuth ? `<button onclick="AXO.devPanel()" class="${BTN} bg-fuchsia-700">🛠️ 개발자 관리자</button>` : ''}
+      <p id="axCloudStatus" class="text-[11px] text-slate-400">아직 연결 테스트를 실행하지 않았어요.</p>`;
+  } else {
+    body.innerHTML = `<p class="text-slate-300">친구들과 같은 랭킹을 이용하고 진행 상황을 저장하려면 계정을 만들어 주세요.</p>
+      <label class="text-slate-300 font-bold">닉네임 (가입 시)</label><input id="axUsername" maxlength="20" placeholder="찬우짱" class="${INPUT}">
+      <label class="text-slate-300 font-bold">이메일</label><input id="axEmail" type="email" autocomplete="email" placeholder="you@example.com" class="${INPUT}">
+      <label class="text-slate-300 font-bold">비밀번호 (6자 이상)</label><input id="axPassword" type="password" autocomplete="current-password" class="${INPUT}">
+      <div class="grid grid-cols-2 gap-2 mt-1"><button onclick="AXO.auth('login')" class="${BTN} bg-purple-600">로그인</button><button onclick="AXO.auth('signup')" class="${BTN} bg-cyan-700">회원가입</button></div>`;
+  }
+}
+
+/* ---------------------------- 랭킹 ---------------------------- */
+async function fetchRanking() {
+  const c = document.getElementById('tabContent');
+  if (!c || activeTab !== 'rank' || !user) return;
+  const { data: stats, error } = await sb.from('player_stats').select('user_id,level,coins').order('level', { ascending: false }).order('coins', { ascending: false }).limit(50);
+  if (activeTab !== 'rank') return;
+  if (error) { c.innerHTML = `<div class="${CARD}"><b>🥇 온라인 랭킹</b><p class="text-xs mt-1">랭킹을 불러오지 못했어요: ${esc(error.message)}</p></div>`; return; }
+  const ids = (stats || []).map(x => x.user_id); let names = {};
+  if (ids.length) { const { data: profs } = await sb.from('profiles').select('id,username').in('id', ids); (profs || []).forEach(x => names[x.id] = x.username); }
+  if (activeTab !== 'rank') return;
+  c.innerHTML = `<div class="flex flex-col gap-2"><div class="border-b border-purple-500/25 pb-2"><h2 class="font-game text-base text-cyan-300">🥇 실시간 온라인 랭킹</h2><p class="text-[11px] text-slate-400">레벨 → 골드 순으로 정렬돼요. 다른 플레이어의 변화가 실시간으로 반영돼요.</p></div>` +
+    (stats || []).map((x, i) => `<div class="${CARD} flex items-center justify-between ${x.user_id === user.id ? 'ring-2 ring-emerald-400' : ''}"><b class="text-xs">${['🥇', '🥈', '🥉'][i] || (i + 1) + '위'} · ${esc(names[x.user_id] || '플레이어')}</b><span class="text-xs font-bold text-amber-300">Lv.${nf(x.level)} · ${nf(x.coins)}🪙</span></div>`).join('') + '</div>';
+}
+function subscribeRanking() {
+  if (!sb || rankChannel) return;
+  try { rankChannel = sb.channel('public-player-ranking').on('postgres_changes', { event: '*', schema: 'public', table: 'player_stats' }, () => fetchRanking()).subscribe(); } catch (e) { }
+}
+
+/* ---------------------------- 친구 ---------------------------- */
+let friendUsers = [], friendMsg = '';
+async function loadFriends() {
+  const c = document.getElementById('tabContent');
+  if (!c || activeTab !== 'friends') return;
+  if (!user) { c.innerHTML = loginPrompt('친구 기능'); return; }
+  let inc = [], accepted = [], names = {};
+  try {
+    const r1 = await sb.from('friend_requests').select('id,sender_id,created_at').eq('receiver_id', user.id).eq('status', 'pending').order('created_at', { ascending: false });
+    if (r1.error) throw r1.error; inc = r1.data || [];
+    const r2 = await sb.from('friend_requests').select('sender_id,receiver_id').eq('status', 'accepted').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+    if (r2.error) throw r2.error; accepted = (r2.data || []).map(x => x.sender_id === user.id ? x.receiver_id : x.sender_id);
+    const ids = [...new Set([...inc.map(x => x.sender_id), ...accepted])];
+    if (ids.length) { const { data } = await sb.from('profiles').select('id,username').in('id', ids); (data || []).forEach(u => names[u.id] = u.username || '이름 없음'); }
+    friendMsg = '';
+  } catch (e) { friendMsg = '친구 데이터를 불러오지 못했어요: ' + (e.message || e); }
+  if (activeTab !== 'friends') return;
+  const f = [...new Set(accepted)].map(id => `<div class="${CARD}"><b class="text-xs">👤 ${esc(names[id] || '플레이어')}</b></div>`).join('') || '<p class="text-[11px] text-slate-400">아직 친구가 없어요.</p>';
+  c.innerHTML = `<div class="flex flex-col gap-2.5"><div class="border-b border-purple-500/25 pb-2"><h2 class="font-game text-base text-cyan-300">👥 친구</h2><p class="text-[11px] text-slate-400">닉네임으로 친구를 찾아 신청하세요.</p></div>
+    ${friendMsg ? `<p class="text-[11px] text-rose-300">${esc(friendMsg)}</p>` : ''}
+    <div class="${CARD}"><b class="text-xs">🔎 친구 찾기</b><div class="flex gap-2 mt-1.5"><input id="axFriendQ" placeholder="친구 닉네임" class="${INPUT}"><button onclick="AXO.searchFriends()" class="${BTN} bg-purple-600 shrink-0">검색</button></div>
+      <div id="axFriendResults" class="mt-2 flex flex-col gap-1.5">${friendUsers.map(u => `<div class="flex items-center justify-between"><span class="text-xs">👤 ${esc(u.username || '이름 없음')}</span><button onclick="AXO.sendFriend('${esc(u.id)}')" class="${BTN} bg-cyan-700 !py-1">친구 신청</button></div>`).join('')}</div></div>
+    <div class="${CARD}"><b class="text-xs">📨 받은 신청 (${inc.length})</b><div class="mt-1.5 flex flex-col gap-1.5">${inc.map(r => `<div class="flex items-center justify-between"><span class="text-xs">👤 ${esc(names[r.sender_id] || '알 수 없는 유저')}</span><span class="flex gap-1"><button onclick="AXO.answerFriend('${esc(r.id)}','accepted')" class="${BTN} bg-emerald-700 !py-1">수락</button><button onclick="AXO.answerFriend('${esc(r.id)}','declined')" class="${BTN} bg-slate-700 !py-1">거절</button></span></div>`).join('') || '<p class="text-[11px] text-slate-400">새로 받은 신청이 없어요.</p>'}</div></div>
+    <div class="${CARD}"><b class="text-xs">🤝 내 친구 (${new Set(accepted).size})</b><div class="mt-1.5 flex flex-col gap-1.5">${f}</div></div></div>`;
+}
+function loginPrompt(what) {
+  return `<div class="${CARD} text-center"><div class="text-4xl">🔒</div><p class="text-xs mt-1">${what}은 로그인 후 이용할 수 있어요.</p><button onclick="AXO.openAccount()" class="${BTN} bg-purple-600 mt-2">👤 로그인 / 회원가입</button></div>`;
+}
+
+/* ---------------------------- 개발자 패널 ---------------------------- */
+function devAction(fn) { if (!user || !devAuth) return showToast('개발자 권한이 필요합니다.'); fn(); saveGame(); try { updateTopHUD(); renderActiveTab(); } catch (e) { } }
+
+/* ---------------------------- 공개 API ---------------------------- */
+const AXO = window.AXO = {
+  openAccount() { ensureModal(); renderAccount(); const m = document.getElementById('axAccountModal'); m.classList.remove('hidden'); m.classList.add('flex'); },
+  closeAccount() { const m = document.getElementById('axAccountModal'); if (m) { m.classList.add('hidden'); m.classList.remove('flex'); } },
+  async auth(kind) {
+    if (!sb) return showToast('온라인 기능을 불러오지 못했어요.');
+    const email = (document.getElementById('axEmail').value || '').trim(), password = document.getElementById('axPassword').value || '', username = (document.getElementById('axUsername').value || '').trim();
+    if (!email || !password) return showToast('이메일과 비밀번호를 입력해 주세요.');
+    if (password.length < 6) return showToast('비밀번호는 6자 이상 입력해 주세요.');
+    let result;
+    if (kind === 'signup') { if (username) localStorage.setItem('chanwooPendingUsername', username); result = await sb.auth.signUp({ email, password, options: { data: { username } } }); }
+    else result = await sb.auth.signInWithPassword({ email, password });
+    if (result.error) { if (kind === 'signup') localStorage.removeItem('chanwooPendingUsername'); return showToast('계정 오류: ' + result.error.message); }
+    if (kind === 'signup' && !result.data.session) return showToast('가입 요청 완료! 이메일 인증 후 로그인해 주세요.');
+    if (result.data.user) {
+      user = result.data.user; await refreshDeveloperRole(); updateAccountButton(); AXO.closeAccount();
+      showToast(devAuth ? '개발자 계정 연결 완료!' : '계정 연결 완료!'); loadCloud(false);
+    }
+  },
+  async logout() {
+    const { error } = await sb.auth.signOut(); if (error) return showToast(error.message);
+    user = null; devAuth = false; cloudBase = null;
+    if (rankChannel) { try { await sb.removeChannel(rankChannel); } catch (e) { } rankChannel = null; }
+    updateAccountButton(); AXO.closeAccount(); showToast('로그아웃했어요.'); if (activeTab === 'rank' || activeTab === 'friends') renderActiveTab();
+  },
+  async saveNow() {
+    const ok = await syncCloud(true), st = document.getElementById('axCloudStatus');
+    if (ok) { showToast('☁️ 클라우드 저장 완료!'); if (st) st.textContent = '지금 저장 완료 · ' + new Date().toLocaleTimeString('ko-KR'); }
+    else if (st) st.textContent = '저장 실패 · 권한과 테이블 설정을 확인하세요.';
+  },
+  async loadNow() {
+    if (!confirm('클라우드에 저장된 데이터로 이 기기의 진행 상황을 덮어쓸까요?')) return;
+    await loadCloud(true); AXO.closeAccount();
+  },
+  async test() {
+    const st = document.getElementById('axCloudStatus');
+    try { const r = await fetchCloudRow(); if (r.error) throw r.error; const has = !!(r.data && r.data.game_data && r.data.game_data.chanwooV3); if (st) st.textContent = '연결 정상 · 이 게임의 클라우드 저장 ' + (has ? '있음' : '없음') + ' · ' + new Date().toLocaleTimeString('ko-KR'); showToast('연동 테스트 완료!'); }
+    catch (e) { if (st) st.textContent = '연결 실패: ' + (e.message || e); }
+  },
+  async searchFriends() {
+    const q = (document.getElementById('axFriendQ').value || '').trim();
+    if (!q) return showToast('닉네임을 입력해 주세요.');
+    const { data, error } = await sb.from('profiles').select('id,username').ilike('username', '%' + q.replace(/[%_]/g, '') + '%').neq('id', user.id).limit(10);
+    if (error) return showToast('검색 실패: ' + error.message);
+    friendUsers = data || []; if (!friendUsers.length) showToast('검색 결과가 없어요.');
+    loadFriends();
+  },
+  async sendFriend(id) {
+    const { error } = await sb.from('friend_requests').insert({ sender_id: user.id, receiver_id: id, status: 'pending' });
+    if (error) return showToast('친구 신청 실패: ' + error.message);
+    showToast('친구 신청을 보냈어요!');
+  },
+  async answerFriend(id, status) {
+    const { error } = await sb.from('friend_requests').update({ status }).eq('id', id).eq('receiver_id', user.id).eq('status', 'pending');
+    if (error) return showToast('처리 실패: ' + error.message);
+    showToast(status === 'accepted' ? '친구 신청을 수락했어요!' : '친구 신청을 거절했어요.'); loadFriends();
+  },
+  devPanel() {
+    if (!user || !devAuth) return showToast('개발자 권한이 확인되지 않았어요.');
+    document.getElementById('axAccBody').innerHTML = `<p class="text-[11px] text-slate-400">개발자 계정 전용 메뉴입니다. 변경 사항은 현재 저장 데이터에 반영돼요.</p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="AXO.dev('gold')" class="${BTN} bg-slate-700">🪙 골드 +1,000,000</button>
+        <button onclick="AXO.dev('gem')" class="${BTN} bg-slate-700">💎 보석 +10,000</button>
+        <button onclick="AXO.dev('level')" class="${BTN} bg-slate-700">⭐ 레벨 100</button>
+        <button onclick="AXO.dev('skins')" class="${BTN} bg-slate-700">👑 모든 스킨 해금</button>
+        <button onclick="AXO.dev('tokens')" class="${BTN} bg-slate-700">🎟️ 레이드 토큰 최대</button>
+        <button onclick="AXO.dev('max')" class="${BTN} bg-fuchsia-700">👑 전체 권한</button>
+      </div><button onclick="AXO.openAccount()" class="${BTN} bg-slate-800">← 계정으로</button>`;
+  },
+  dev(kind) {
+    devAction(() => {
+      const a = (typeof AXA !== 'undefined') ? state.ax = state.ax || {} : {};
+      const allSkins = () => { a.ownedSkins = Array.from({ length: 37 }, (_, i) => i); };
+      if (kind === 'gold') { state.gold += 1000000; showToast('개발자: 골드 +1,000,000'); }
+      if (kind === 'gem') { state.gem += 10000; showToast('개발자: 보석 +10,000'); }
+      if (kind === 'level') { state.level = Math.max(state.level, 100); state.exp = 0; showToast('개발자: 레벨 100'); }
+      if (kind === 'skins') { allSkins(); showToast('개발자: 모든 스킨 해금'); }
+      if (kind === 'tokens') { a.raidTokens = 10; showToast('개발자: 레이드 토큰 최대'); }
+      if (kind === 'max') { state.gold += 999999999; state.gem += 999999; state.level = Math.max(state.level, 200); state.exp = 0; state.stats = { str: 500, hpLv: 500, critLv: 500, gpsLv: 500 }; allSkins(); a.raidTokens = 10; a.skinShards = (a.skinShards || 0) + 9999; showToast('개발자 전체 권한 적용 완료!'); }
+    });
+  }
+};
+
+/* ---------------------------- 탭 연결 ---------------------------- */
+TABS.push({ id: 'friends', label: '친구', icon: '👥' });
+const _renderActiveTab2 = renderActiveTab;
+renderActiveTab = function () {
+  if (activeTab === 'friends') {
+    const c = document.getElementById('tabContent');
+    c.innerHTML = user ? '<p class="text-xs text-slate-300">불러오는 중...</p>' : loginPrompt('친구 기능');
+    if (user) loadFriends();
+    return;
+  }
+  if (activeTab === 'rank') {
+    if (user) { document.getElementById('tabContent').innerHTML = '<p class="text-xs text-slate-300">온라인 랭킹을 불러오는 중...</p>'; fetchRanking(); return; }
+    _renderActiveTab2();
+    document.getElementById('tabContent').insertAdjacentHTML('afterbegin', `<div class="${CARD} text-center mb-2"><p class="text-xs">로그인하면 실시간 온라인 랭킹을 볼 수 있어요.</p><button onclick="AXO.openAccount()" class="${BTN} bg-purple-600 mt-1.5">👤 로그인 / 회원가입</button></div>`);
+    return;
+  }
+  _renderActiveTab2();
+};
+
+/* 헤더에 계정 버튼 추가 + 설정창에도 연결 */
+const settingsBtn = document.querySelector('button[onclick="openModal(\'settingsModal\')"]');
+if (settingsBtn) {
+  const b = document.createElement('button');
+  b.id = 'axAccountBtn';
+  b.className = 'btn-game px-2.5 py-1.5 rounded-xl bg-slate-800 border border-slate-600 text-xs font-bold';
+  b.textContent = '👤 로그인';
+  b.onclick = () => AXO.openAccount();
+  settingsBtn.parentNode.insertBefore(b, settingsBtn);
+}
+
+setInterval(() => { if (user && !hydrating) syncCloud(false); }, 30000);
+
+/* 세션 복원 */
+if (sb) {
+  sb.auth.getSession().then(async ({ data }) => {
+    user = (data.session && data.session.user) || null;
+    if (user) await refreshDeveloperRole();
+    updateAccountButton();
+    if (user) loadCloud(false);
+  });
+  sb.auth.onAuthStateChange((_e, session) => {
+    const prev = user && user.id;
+    user = (session && session.user) || null;
+    updateAccountButton();
+    if (user && user.id !== prev) { setTimeout(() => refreshDeveloperRole().then(updateAccountButton), 0); }
+  });
+}
 })();
 
 </script>
