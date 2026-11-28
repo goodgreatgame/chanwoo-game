@@ -3752,16 +3752,40 @@ function coopRender() {
     const hp = Math.max(0, Number(coopRaid.current_hp) || 0), maxHp = Math.max(1, Number(coopRaid.max_hp) || 1);
     const pct = Math.max(0, Math.min(100, hp / maxHp * 100));
     const ranking = Array.isArray(coopRaid.ranking) ? coopRaid.ranking : [];
-    const rankHtml = ranking.map((r, i) => `<div class="flex items-center justify-between text-xs py-1 border-b border-slate-800"><span>${i + 1}위 · ${esc(r.username || '플레이어')}</span><b class="text-amber-300">${nf(r.damage_dealt)} 피해</b></div>`).join('') || '<p class="text-xs text-slate-400">기록이 아직 없어요.</p>';
+    const rankHtml = ranking.map((r, i) => `<div class="flex items-center justify-between text-xs py-1.5 border-b border-white/10"><span class="text-slate-200">${i + 1}위 · ${esc(r.username || '플레이어')}</span><b class="text-amber-300 tabular-nums">${nf(r.damage_dealt)} 피해</b></div>`).join('') || '<p class="text-xs text-slate-400">아직 공격 기록이 없어요.</p>';
     const cleared = coopRaid.status === 'cleared';
     const ended = coopRaid.status === 'failed';
-    raidHtml = `<div class="${CARD}"><div class="flex items-center justify-between"><b class="text-sm text-rose-300">👹 ${esc(coopRaid.boss_name || '협동 보스')}</b><span class="text-[11px] ${cleared ? 'text-emerald-300' : ended ? 'text-slate-400' : 'text-cyan-300'}">${cleared ? '토벌 성공' : ended ? '시간 초과' : '전투 중'}</span></div>
-      <div class="mt-3 flex justify-between text-xs"><span>보스 체력</span><b>${nf(hp)} / ${nf(maxHp)}</b></div><div class="h-3 rounded-full bg-slate-800 overflow-hidden mt-1"><div class="h-full bg-gradient-to-r from-rose-700 to-orange-400" style="width:${pct}%"></div></div>
-      <p class="text-[11px] text-slate-400 mt-2">남은 시간: ${coopRaid.seconds_left == null ? '정보 없음' : nf(coopRaid.seconds_left) + '초'}</p>
-      ${!cleared && !ended ? `<div class="grid grid-cols-2 gap-2 mt-3"><button onclick="AXO.coopAttack('NORMAL')" class="${BTN} bg-rose-700">⚔️ 일반 공격</button><button onclick="AXO.coopAttack('ALL')" class="${BTN} bg-amber-700">💥 약점 공격</button></div>` : ''}
-      ${cleared ? `<button onclick="AXO.coopClaim()" class="${BTN} bg-emerald-700 mt-3 w-full">🎁 보상 받기</button>` : ''}
-      <div class="mt-3"><b class="text-xs">🏆 피해량 순위</b><div class="mt-1">${rankHtml}</div></div>
-      <button onclick="AXO.coopRefresh()" class="${BTN} bg-slate-700 mt-3 w-full">상태 새로고침</button></div>`;
+    const stageNo = Number(coopRaid.stage_no) || Number(document.getElementById('coopStage')?.value) || 1;
+    const stageLabel = `STAGE ${stageNo}`;
+    const bossEmoji = stageNo >= 4 ? '👹' : stageNo === 3 ? '🧙' : stageNo === 2 ? '👺' : '🟢';
+    const teamHtml = members.map((m, i) => {
+      const found = ranking.find(r => r.user_id === m.user_id);
+      const damage = Number(found?.damage_dealt) || 0;
+      const maxDamage = Math.max(1, ...ranking.map(r => Number(r.damage_dealt) || 0));
+      const contribution = Math.max(0, Math.min(100, damage / maxDamage * 100));
+      const mine = m.user_id === user.id;
+      const shortName = coopMemberName(m);
+      const initial = esc((shortName || '플').replace(/\s/g, '').slice(0, 1));
+      return `<div class="min-w-0 rounded-xl border ${mine ? 'border-cyan-400/60 bg-cyan-950/40' : 'border-white/10 bg-slate-950/55'} p-2.5">
+        <div class="flex items-center gap-2"><div class="w-10 h-10 shrink-0 rounded-xl grid place-items-center text-xl font-black text-white shadow-lg" style="background:linear-gradient(145deg,${i % 2 ? '#7c3aed,#312e81' : '#0891b2,#164e63'})">${initial}</div>
+        <div class="min-w-0 flex-1"><div class="truncate text-[11px] font-black text-white">${esc(shortName)} ${mine ? '<span class="text-cyan-300">(나)</span>' : ''}</div><div class="text-[9px] text-slate-400">${m.user_id === coopParty.leader_id ? '👑 파티장' : '파티원'}</div></div></div>
+        <div class="mt-2 flex justify-between text-[9px] text-slate-300"><span>누적 피해</span><b class="text-cyan-200 tabular-nums">${nf(damage)}</b></div>
+        <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-800"><div class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-violet-400" style="width:${contribution}%"></div></div>
+      </div>`;
+    }).join('') || '<div class="text-xs text-slate-400">파티원을 불러오지 못했어요.</div>';
+    raidHtml = `<section class="overflow-hidden rounded-2xl border border-violet-500/50 shadow-2xl" style="background:radial-gradient(ellipse at 50% 0%,rgba(109,40,217,.28),transparent 58%),linear-gradient(160deg,#171638 0%,#090d1d 75%,#070b16 100%)">
+      <div class="flex items-center justify-between border-b border-white/10 px-4 py-3"><button onclick="AXO.coopRefresh()" class="rounded-lg bg-slate-800/90 px-3 py-1.5 text-[11px] font-black text-slate-200">◀ 새로고침</button><div class="text-center"><div class="text-[10px] font-black tracking-widest text-amber-300">${stageLabel}</div><div class="mt-0.5 text-[10px] text-slate-300">협동 보스 토벌전</div></div><span class="rounded-lg px-3 py-1.5 text-[10px] font-black ${cleared ? 'bg-emerald-500/20 text-emerald-300' : ended ? 'bg-slate-700 text-slate-300' : 'bg-rose-500/15 text-rose-300'}">${cleared ? '토벌 성공' : ended ? '전투 종료' : '전투 중'}</span></div>
+      <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-5 sm:gap-4 sm:px-5">
+        <div class="min-w-0"><div class="mb-2 text-[10px] font-black text-cyan-200">우리 파티 · ${members.length}/4</div><div class="grid grid-cols-1 gap-2">${teamHtml}</div></div>
+        <div class="px-1 text-center"><div class="text-2xl font-black italic sm:text-4xl" style="color:#fb923c;text-shadow:0 0 18px rgba(251,146,60,.55)">VS</div><div class="mt-2 text-[8px] font-bold tracking-widest text-slate-500">CO-OP RAID</div></div>
+        <div class="min-w-0 text-center"><div class="mb-2 truncate text-[10px] font-black text-rose-200">BOSS</div><div class="mx-auto grid aspect-square w-full max-w-32 place-items-center rounded-2xl border border-rose-300/30 text-5xl shadow-xl sm:text-6xl" style="background:radial-gradient(circle at 35% 25%,#8b5cf6,#31205f 55%,#160e31);box-shadow:0 0 28px rgba(168,85,247,.25)">${bossEmoji}</div><div class="mt-2 truncate text-[11px] font-black text-rose-200">${esc(coopRaid.boss_name || '협동 보스')}</div><div class="mt-1 text-[10px] font-black tabular-nums text-rose-300">${nf(hp)} / ${nf(maxHp)}</div><div class="mt-1.5 h-2.5 overflow-hidden rounded-full border border-white/10 bg-slate-900"><div class="h-full rounded-full bg-gradient-to-r from-rose-700 via-red-500 to-orange-400 transition-all" style="width:${pct}%"></div></div><div class="mt-1 text-[9px] text-slate-400">보스 체력 ${pct.toFixed(1)}%</div></div>
+      </div>
+      <div class="mx-3 mb-3 rounded-xl border border-white/10 bg-black/25 p-3 sm:mx-5"><div class="flex items-center justify-between text-[10px]"><span class="font-bold text-slate-300">⏱ 남은 전투 시간</span><b class="tabular-nums text-amber-300">${coopRaid.seconds_left == null ? '정보 없음' : nf(coopRaid.seconds_left) + '초'}</b></div>
+        ${!cleared && !ended ? `<div class="mt-3 grid grid-cols-2 gap-2"><button onclick="AXO.coopAttack('NORMAL')" class="rounded-xl border border-rose-300/30 bg-gradient-to-b from-rose-600 to-rose-800 px-2 py-3 text-xs font-black text-white shadow-lg">⚔️ 일반 공격</button><button onclick="AXO.coopAttack('ALL')" class="rounded-xl border border-amber-300/30 bg-gradient-to-b from-amber-500 to-orange-700 px-2 py-3 text-xs font-black text-white shadow-lg">💥 약점 공격</button></div>` : ''}
+        ${cleared ? `<button onclick="AXO.coopClaim()" class="mt-3 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 px-3 py-3 text-sm font-black text-white">🎁 협동 레이드 보상 받기</button>` : ''}
+      </div>
+      <div class="border-t border-white/10 bg-black/20 px-4 py-3"><div class="mb-1 text-[11px] font-black text-amber-200">🏆 파티 피해량 순위</div>${rankHtml}</div>
+    </section>`;
   } else {
     raidHtml = `<div class="${CARD}"><b class="text-sm">👹 협동 레이드 시작</b><p class="text-[11px] text-slate-400 mt-1">파티장만 레이드를 시작할 수 있어요. 시작하면 현재 파티원이 모두 참가합니다.</p>${isLeader ? `<select id="coopStage" class="${INPUT} mt-2">${bossOptions}</select><button onclick="AXO.coopStart()" class="${BTN} bg-rose-700 mt-2 w-full">보스 레이드 시작</button>` : '<p class="text-xs text-amber-300 mt-2">파티장이 레이드를 시작할 때까지 기다려 주세요.</p>'}</div>`;
   }
