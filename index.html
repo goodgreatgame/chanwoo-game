@@ -3701,17 +3701,28 @@ async function coopLoad() {
       coopRpc('coop_get_party'),
       sb.from('coop_boss_settings').select('stage_no,boss_name,max_hp,time_limit,defense_pct').order('stage_no', { ascending: true })
     ]);
+    // RPC 응답이 {party:{...}, members:[...]} 또는 {party_id,...} 형태인 경우를 모두 정규화
     coopParty = party && Object.prototype.hasOwnProperty.call(party, 'party') ? party.party : party;
+    if (coopParty && !coopParty.party_id && coopParty.id) coopParty.party_id = coopParty.id;
+    if (coopParty && !Array.isArray(coopParty.members) && party && Array.isArray(party.members)) coopParty.members = party.members;
     coopBosses = (!bossRes.error && bossRes.data) ? bossRes.data : [];
     coopRaidId = null; coopRaid = null;
     if (coopParty && coopParty.party_id) {
       const { data: active, error: raidErr } = await sb.from('coop_raids')
         .select('id').eq('party_id', coopParty.party_id).in('status', ['active', 'cleared'])
         .order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (!raidErr && active && active.id) coopRaidId = active.id;
+      // 조회 권한/쿼리 오류를 숨기면 레이드가 없는 것처럼 보이므로 화면에 오류를 표시
+      if (raidErr) throw raidErr;
+      if (active && active.id) coopRaidId = active.id;
       if (coopRaidId) {
-        coopRaid = await coopRpc('coop_get_raid_state', { p_raid: coopRaidId });
-        const mine = (coopRaid.ranking || []).find(x => x.user_id === user.id);
+        const raidState = await coopRpc('coop_get_raid_state', { p_raid: coopRaidId });
+        // RPC가 {raid:{...}, ranking:[...]} 형태로 반환하는 경우도 처리
+        coopRaid = raidState && raidState.raid
+          ? { ...raidState.raid, ranking: raidState.ranking || raidState.raid.ranking || [] }
+          : raidState;
+        if (!coopRaid || typeof coopRaid !== 'object') throw new Error('레이드 상태 응답이 올바르지 않습니다.');
+        if (!Array.isArray(coopRaid.ranking)) coopRaid.ranking = [];
+        const mine = coopRaid.ranking.find(x => x.user_id === user.id);
         if (coopRaid.status === 'cleared' && mine && mine.reward_claimed) { coopRaidId = null; coopRaid = null; }
       }
     }
